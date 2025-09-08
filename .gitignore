@@ -1,0 +1,5 @@
+# Standard Python .gitignore
+__pycache__/
+*.pyc
+.env
+venv/
