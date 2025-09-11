@@ -1,4 +1,7 @@
 import os
+import sys
+# Add project root to PYTHONPATH for Alembic environment
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from logging.config import fileConfig
 
 from sqlalchemy import engine_from_config
@@ -19,8 +22,9 @@ fileConfig(config.config_file_name)
 # from myapp import mymodel
 # target_metadata = mymodel.Base.metadata
 # For this project, we will import the metadata from the models file.
-# Since we haven't defined ORM models yet, we will use a placeholder.
-target_metadata = None
+# Import the Base metadata from our models.
+from backend.models import Base
+target_metadata = Base.metadata
 
 def run_migrations_offline():
     """Run migrations in 'offline' mode."""

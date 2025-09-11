@@ -17,6 +17,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    restart: unless-stopped
 
   backend:
     build:
@@ -25,11 +26,11 @@ services:
     container_name: alphasys-backend
     command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
     environment:
-      - POSTGRES_HOST=db
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-      - POSTGRES_DB=alphasys
-      - JWT_SECRET=supersecretkey
+      POSTGRES_HOST: db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: alphasys
+      JWT_SECRET: supersecret
     ports:
       - "8000:8000"
     depends_on:
@@ -37,21 +38,7 @@ services:
         condition: service_healthy
     volumes:
       - .:/app
-
-  frontend:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: alphasys-frontend
-    command: streamlit run frontend/app.py --server.port 8501 --server.enableCORS false
-    environment:
-      - BACKEND_URL=http://backend:8000
-    ports:
-      - "8501:8501"
-    depends_on:
-      - backend
-    volumes:
-      - .:/app
+    restart: unless-stopped
 
 volumes:
   db_data:

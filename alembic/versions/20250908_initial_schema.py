@@ -27,6 +27,7 @@ def upgrade():
         sa.Column("phone_number", sa.String(20)),
         sa.Column("department_id", sa.Integer, sa.ForeignKey("departments.department_id")),
         sa.Column("role_id", sa.Integer, sa.ForeignKey("roles.role_id")),
+        sa.Column("role_name", sa.String(50), server_default="employee"),
         sa.Column("hourly_rate", sa.Numeric(10, 2), nullable=False),
         sa.Column("date_hired", sa.Date, nullable=False),
         sa.Column("status", sa.String(20), server_default="active")
