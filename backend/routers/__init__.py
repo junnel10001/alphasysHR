@@ -3,7 +3,6 @@ Router module initialization
 """
 
 # Import all routers
-from . import activity
 from . import attendance
 from . import dashboard
 from . import employee_dashboard
@@ -17,7 +16,6 @@ from . import roles
 
 # Make all routers available
 __all__ = [
-    'activity',
     'attendance',
     'dashboard',
     'employee_dashboard',

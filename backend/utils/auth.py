@@ -4,7 +4,7 @@ from jose import JWTError, jwt
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
-from models import User
+from ..models import User
 
 # Security configuration
 SECRET_KEY = "your-secret-key-here"  # In production, use environment variables

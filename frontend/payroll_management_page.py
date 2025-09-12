@@ -679,7 +679,7 @@ def main():
     payroll_summary_dashboard()
     
     # Create tabs for different sections
-    tab1, tab2, tab3, tab4 = st.tabs(["Create Payroll", "Payroll History", "Employee View", "Bulk Payslips"])
+    tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(["Create Payroll", "Payroll History", "Employee View", "Bulk Payslips", "Performance", "Logs", "Analytics"])
     
     with tab1:
         if has_permission("admin") or has_permission("manager"):
@@ -699,8 +699,360 @@ def main():
     with tab4:
         if has_permission("admin") or has_permission("manager"):
             bulk_payslip_generation_form()
+    
+    with tab5:
+        payroll_performance_dashboard()
+    
+    with tab6:
+        col1, col2 = st.columns(2)
+        with col1:
+            payroll_logs_search_section()
+        with col2:
+            payroll_log_stats_section()
+    
+    with tab7:
+        col1, col2 = st.columns(2)
+        with col1:
+            payroll_user_activity_section()
+            payroll_operations_summary_section()
+        with col2:
+            payroll_export_section()
+
+def get_payroll_performance_stats():
+    """Get payroll performance statistics"""
+    try:
+        response = api_get("/payroll/performance/stats")
+        if response.status_code == 200:
+            return response.json()
         else:
-            st.info("You don't have permission to bulk generate payslips")
+            st.error("Failed to fetch payroll performance stats")
+            return {}
+    except Exception as e:
+        st.error(f"Error fetching payroll performance stats: {e}")
+        return {}
+
+def get_payroll_slow_operations():
+    """Get slow operations for payroll performance analysis"""
+    try:
+        response = api_get("/payroll/performance/slow-operations")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            st.error("Failed to fetch slow operations")
+            return []
+    except Exception as e:
+        st.error(f"Error fetching slow operations: {e}")
+        return []
+
+def get_payroll_performance_export():
+    """Export performance data for payroll operations"""
+    try:
+        response = api_get("/payroll/performance/export")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            st.error("Failed to export performance data")
+            return {}
+    except Exception as e:
+        st.error(f"Error exporting performance data: {e}")
+        return {}
+
+def search_payroll_logs(query: str, limit: int = 100, offset: int = 0):
+    """Search payroll logs"""
+    try:
+        params = {}
+        if limit:
+            params['limit'] = str(limit)
+        if offset:
+            params['offset'] = str(offset)
+        
+        query_string = "&".join([f"{k}={v}" for k, v in params.items()])
+        endpoint = f"/payroll/logs/search?query={query}&{query_string}"
+        
+        response = api_get(endpoint)
+        if response.status_code == 200:
+            return response.json()
+        else:
+            st.error("Failed to search payroll logs")
+            return []
+    except Exception as e:
+        st.error(f"Error searching payroll logs: {e}")
+        return []
+
+def get_payroll_log_stats():
+    """Get log statistics for payroll operations"""
+    try:
+        response = api_get("/payroll/logs/stats")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            st.error("Failed to fetch log statistics")
+            return {}
+    except Exception as e:
+        st.error(f"Error fetching log statistics: {e}")
+        return {}
+
+def get_payroll_user_activity_summary(user_id: int):
+    """Get user activity summary for payroll operations"""
+    try:
+        response = api_get(f"/payroll/logs/user/{user_id}/activity")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            st.error("Failed to fetch user activity summary")
+            return {}
+    except Exception as e:
+        st.error(f"Error fetching user activity summary: {e}")
+        return {}
+
+def get_payroll_operations_summary(payroll_id: int):
+    """Get payroll operations summary"""
+    try:
+        response = api_get(f"/payroll/logs/payroll/{payroll_id}/operations")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            st.error("Failed to fetch operations summary")
+            return {}
+    except Exception as e:
+        st.error(f"Error fetching operations summary: {e}")
+        return {}
+
+def export_payroll_logs():
+    """Export payroll logs"""
+    try:
+        response = api_get("/payroll/logs/export")
+        if response.status_code == 200:
+            return response.json()
+        else:
+            st.error("Failed to export payroll logs")
+            return {}
+    except Exception as e:
+        st.error(f"Error exporting payroll logs: {e}")
+        return {}
+
+def payroll_performance_dashboard():
+    """Render payroll performance dashboard"""
+    st.subheader("Payroll Performance Dashboard")
+    
+    # Get performance statistics
+    stats = get_payroll_performance_stats()
+    
+    if stats:
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Total Operations", stats.get('total_operations', 0))
+        
+        with col2:
+            st.metric("Average Response Time", f"{stats.get('avg_response_time', 0):.2f}s")
+        
+        with col3:
+            st.metric("Success Rate", f"{stats.get('success_rate', 0):.1%}")
+        
+        with col4:
+            st.metric("Error Rate", f"{stats.get('error_rate', 0):.1%}")
+    
+    # Slow operations section
+    st.write("### Slow Operations")
+    slow_ops = get_payroll_slow_operations()
+    
+    if slow_ops:
+        df = pd.DataFrame(slow_ops)
+        
+        # Format the data for display
+        if not df.empty:
+            df['operation'] = df['operation'].str.replace('_', ' ').str.title()
+            df['avg_time'] = df['avg_time'].round(4)
+            df['count'] = df['count'].astype(int)
+            
+            st.dataframe(
+                df[['operation', 'avg_time', 'count']].rename(columns={
+                    'operation': 'Operation',
+                    'avg_time': 'Avg Time (s)',
+                    'count': 'Count'
+                }),
+                use_container_width=True,
+                hide_index=True
+            )
+        else:
+            st.info("No slow operations found")
+    else:
+        st.info("No slow operations data available")
+
+def payroll_logs_search_section():
+    """Render payroll logs search section"""
+    st.subheader("Payroll Logs Search")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        query = st.text_input("Search Query", placeholder="Enter search query...")
+    
+    with col2:
+        limit = st.number_input("Limit", min_value=1, max_value=200, value=50)
+    
+    # Search button
+    if st.button("Search Logs", type="primary"):
+        if query:
+            with st.spinner("Searching logs..."):
+                results = search_payroll_logs(query, limit)
+            
+            if results:
+                st.success(f"Found {len(results)} matching logs")
+                
+                # Create DataFrame
+                df = pd.DataFrame(results)
+                
+                # Display results
+                st.dataframe(
+                    df[[ 'timestamp', 'level', 'message', 'user_id']].rename(columns={
+                        'timestamp': 'Timestamp',
+                        'level': 'Level',
+                        'message': 'Message',
+                        'user_id': 'User ID'
+                    }),
+                    use_container_width=True,
+                    hide_index=True
+                )
+            else:
+                st.info("No logs found matching your search")
+        else:
+            st.warning("Please enter a search query")
+
+def payroll_log_stats_section():
+    """Render payroll log statistics section"""
+    st.subheader("Payroll Log Statistics")
+    
+    stats = get_payroll_log_stats()
+    
+    if stats:
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric("Total Logs", stats.get('total_logs', 0))
+        
+        with col2:
+            st.metric("Error Logs", stats.get('error_logs', 0))
+        
+        with col3:
+            st.metric("Warning Logs", stats.get('warning_logs', 0))
+        
+        with col4:
+            st.metric("Info Logs", stats.get('info_logs', 0))
+
+def payroll_user_activity_section():
+    """Render payroll user activity section"""
+    st.subheader("Payroll User Activity Summary")
+    
+    # Get current user ID
+    current_user_id = st.session_state.get('user_id', 1)
+    
+    # Get user activity summary
+    summary = get_payroll_user_activity_summary(current_user_id)
+    
+    if summary:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.metric("Total Activities", summary.get('total_activities', 0))
+        
+        with col2:
+            st.metric("Recent Activities", summary.get('recent_activities', 0))
+        
+        # Recent activities table
+        if 'recent_activities' in summary and summary['recent_activities']:
+            st.write("### Recent Activities")
+            df = pd.DataFrame(summary['recent_activities'])
+            
+            st.dataframe(
+                df[['action', 'timestamp', 'resource']].rename(columns={
+                    'action': 'Action',
+                    'timestamp': 'Timestamp',
+                    'resource': 'Resource'
+                }),
+                use_container_width=True,
+                hide_index=True
+            )
+
+def payroll_operations_summary_section():
+    """Render payroll operations summary section"""
+    st.subheader("Payroll Operations Summary")
+    
+    # Get payroll data for selection
+    payroll_data = get_payroll_history()
+    
+    if not payroll_data:
+        st.info("No payroll records found")
+        return
+    
+    # Create selection interface
+    payroll_options = {f"Payroll {payroll['payroll_id']}": payroll['payroll_id'] for payroll in payroll_data}
+    selected_payroll = st.selectbox("Select Payroll", list(payroll_options.keys()))
+    selected_payroll_id = payroll_options[selected_payroll]
+    
+    # Get operations summary
+    summary = get_payroll_operations_summary(selected_payroll_id)
+    
+    if summary:
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.metric("Total Operations", summary.get('total_operations', 0))
+        
+        with col2:
+            st.metric("Failed Operations", summary.get('failed_operations', 0))
+        
+        # Operations breakdown
+        if 'operations_breakdown' in summary:
+            st.write("### Operations Breakdown")
+            df = pd.DataFrame(summary['operations_breakdown'])
+            
+            st.dataframe(
+                df[['operation', 'count', 'success_rate']].rename(columns={
+                    'operation': 'Operation',
+                    'count': 'Count',
+                    'success_rate': 'Success Rate'
+                }),
+                use_container_width=True,
+                hide_index=True
+            )
+
+def payroll_export_section():
+    """Render payroll export section"""
+    st.subheader("Payroll Export")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        if st.button("Export Performance Data", type="primary"):
+            with st.spinner("Exporting performance data..."):
+                result = get_payroll_performance_export()
+            
+            if result:
+                st.success("Performance data exported successfully!")
+                
+                # Display export summary
+                if 'export_summary' in result:
+                    st.write("### Export Summary")
+                    st.json(result['export_summary'])
+            else:
+                st.error("Failed to export performance data")
+    
+    with col2:
+        if st.button("Export Logs", type="secondary"):
+            with st.spinner("Exporting logs..."):
+                result = export_payroll_logs()
+            
+            if result:
+                st.success("Logs exported successfully!")
+                
+                # Display export summary
+                if 'export_summary' in result:
+                    st.write("### Export Summary")
+                    st.json(result['export_summary'])
+            else:
+                st.error("Failed to export logs")
 
 if __name__ == "__main__":
     main()

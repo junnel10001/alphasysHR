@@ -6,14 +6,13 @@ import json
 import pandas as pd
 import asyncio
 
-from database import get_db
-from models import ActivityLog, User
-from services.activity_service import ActivityService
-from utils.auth import get_current_user
-from models import User
-from backend.utils.logger import activity_logger, setup_activity_logging
-from backend.utils.log_aggregator import log_aggregator, SearchResult
-from backend.utils.dashboard_integration import dashboard_integration
+from ..database import get_db
+from ..models import ActivityLog, User
+from ..services.activity_service import ActivityService
+from ..utils.auth import get_current_user
+from ..utils.logger import activity_logger, setup_activity_logging
+from ..utils.log_aggregator import log_aggregator, SearchResult
+from ..utils.dashboard_integration import dashboard_integration
 
 router = APIRouter(prefix="/activity", tags=["activity"])
 
@@ -21,15 +20,14 @@ router = APIRouter(prefix="/activity", tags=["activity"])
 setup_activity_logging()
 
 @router.get("/logs", response_model=None)
-async def get_activity_logs(
+def get_activity_logs(
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
     user_id: Optional[int] = Query(None, ge=1),
     action: Optional[str] = Query(None),
     start_date: Optional[date] = Query(None),
     end_date: Optional[date] = Query(None),
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    current_user: User = Depends(get_current_user)
 ):
     """Get activity logs with optional filters"""
     try:
@@ -48,7 +46,14 @@ async def get_activity_logs(
             log_to_file=True
         )
         
-        activity_service = ActivityService(db)
+        # Get database session using context manager
+        from ..database import get_db
+        db = next(get_db())
+        try:
+            activity_service = ActivityService(db)
+            # All database operations are done within the service
+        finally:
+            db.close()
         
         # Check permissions
         if user_id and user_id != current_user.user_id and not (current_user.role_name == "admin" or current_user.role_name == "manager"):
@@ -96,7 +101,7 @@ async def get_activity_logs(
         raise HTTPException(status_code=500, detail=f"Error fetching activity logs: {str(e)}")
 
 @router.get("/logs/{log_id}", response_model=None)
-async def get_activity_log(
+def get_activity_log(
     log_id: int,
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -141,7 +146,7 @@ async def get_activity_log(
         raise HTTPException(status_code=500, detail=f"Error fetching activity log: {str(e)}")
 
 @router.get("/user/{user_id}/activities", response_model=None)
-async def get_user_activities(
+def get_user_activities(
     user_id: int,
     limit: int = Query(50, ge=1, le=200),
     offset: int = Query(0, ge=0),
@@ -192,7 +197,7 @@ async def get_user_activities(
         raise HTTPException(status_code=500, detail=f"Error fetching user activities: {str(e)}")
 
 @router.get("/stats", response_model=None)
-async def get_activity_stats(
+def get_activity_stats(
     user_id: Optional[int] = Query(None, ge=1),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -235,7 +240,7 @@ async def get_activity_stats(
         })
         raise HTTPException(status_code=500, detail=f"Error fetching activity stats: {str(e)}")
 
-@router.delete("/logs/cleanup")
+@router.delete("/logs/cleanup", response_model=None)
 async def cleanup_old_activities(
     days_to_keep: int = Query(90, ge=1, le=365),
     current_user: User = Depends(get_current_user),
@@ -282,7 +287,7 @@ async def cleanup_old_activities(
         raise HTTPException(status_code=500, detail=f"Error cleaning up activities: {str(e)}")
 
 @router.get("/recent", response_model=None)
-async def get_recent_activities(
+def get_recent_activities(
     limit: int = Query(20, ge=1, le=100),
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
@@ -326,7 +331,7 @@ async def get_recent_activities(
         raise HTTPException(status_code=500, detail=f"Error fetching recent activities: {str(e)}")
 
 @router.get("/search", response_model=None)
-async def search_activity_logs(
+def search_activity_logs(
     query: str = Query(..., description="Search query string"),
     limit: int = Query(100, ge=1, le=1000, description="Maximum number of results"),
     offset: int = Query(0, ge=0, description="Offset for pagination"),
@@ -400,8 +405,8 @@ async def search_activity_logs(
         })
         raise HTTPException(status_code=500, detail=f"Error searching activity logs: {str(e)}")
 
-@router.get("/export/{format}")
-async def export_activity_logs(
+@router.get("/export/{format}", response_model=None)
+def export_activity_logs(
     format: str = Path(..., regex="^(json|csv)$", description="Export format (json or csv)"),
     limit: int = Query(1000, ge=1, le=10000, description="Maximum number of logs to export"),
     current_user: User = Depends(get_current_user)
@@ -484,8 +489,8 @@ async def export_activity_logs(
         })
         raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
 
-@router.get("/dashboard/stats")
-async def get_dashboard_stats(
+@router.get("/dashboard/stats", response_model=None)
+def get_dashboard_stats(
     current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
@@ -638,8 +643,8 @@ async def websocket_dashboard_endpoint(websocket: WebSocket):
             "client_id": client_id
         })
 
-@router.get("/dashboard/data")
-async def get_dashboard_data(
+@router.get("/dashboard/data", response_model=None)
+def get_dashboard_data(
     current_user: User = Depends(get_current_user)
 ):
     """Get current dashboard data."""
@@ -664,36 +669,9 @@ async def get_dashboard_data(
         })
         raise HTTPException(status_code=500, detail=f"Error fetching dashboard data: {str(e)}")
 
-@router.get("/dashboard/stats")
-async def get_dashboard_stats(
-    hours: int = Query(24, ge=1, le=168, description="Number of hours for stats"),
-    current_user: User = Depends(get_current_user)
-):
-    """Get dashboard statistics."""
-    try:
-        # Log the API call
-        activity_logger.log_activity(
-            user_id=current_user.user_id,
-            action="get_dashboard_stats",
-            details={"dashboard": "realtime", "hours": hours},
-            log_to_db=True,
-            log_to_file=True
-        )
-        
-        stats = dashboard_integration.get_dashboard_stats(hours=hours)
-        
-        return stats
-        
-    except Exception as e:
-        activity_logger.log_error(e, {
-            "endpoint": "get_dashboard_stats",
-            "user_id": current_user.user_id,
-            "hours": hours
-        })
-        raise HTTPException(status_code=500, detail=f"Error fetching dashboard stats: {str(e)}")
 
 @router.post("/dashboard/activity")
-async def record_dashboard_activity(
+def record_dashboard_activity(
     activity_data: Dict[str, Any],
     current_user: User = Depends(get_current_user)
 ):
@@ -739,8 +717,8 @@ async def record_dashboard_activity(
         })
         raise HTTPException(status_code=500, detail=f"Error recording dashboard activity: {str(e)}")
 
-@router.get("/dashboard/export/{format}")
-async def export_dashboard_data(
+@router.get("/dashboard/export/{format}", response_model=None)
+def export_dashboard_data(
     format: str = Path(..., regex="^(json|csv)$", description="Export format (json or csv)"),
     hours: int = Query(24, ge=1, le=168, description="Number of hours of data to export"),
     current_user: User = Depends(get_current_user)

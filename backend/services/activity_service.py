@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from models import ActivityLog
+from ..models import ActivityLog
 from datetime import datetime, timedelta, time
 from typing import Optional, List, Dict, Any
 from backend.utils.logger import activity_logger

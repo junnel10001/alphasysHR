@@ -9,16 +9,17 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from datetime import date
 import os
 import sys
 
 # Add the backend directory to the path
 sys.path.append(os.path.join(os.path.dirname(__file__), '..', 'backend'))
 
-from main import app
-from database import get_db
-from models import Base, User, Role, Permission, RolePermission
-from utils.rbac import RBACUtils
+from backend.main import app
+from backend.database import get_db
+from backend.models import Base, User, Role, Permission, RolePermission
+from backend.utils.rbac import RBACUtils
 
 # Create a test database
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test_rbac.db"
@@ -63,7 +64,7 @@ def test_user(test_db):
         last_name="User",
         email="test@example.com",
         hourly_rate=15.00,
-        date_hired="2023-01-01",
+        date_hired=date(2023, 1, 1),
         status="active"
     )
     test_db.add(user)
@@ -82,7 +83,7 @@ def test_admin(test_db):
         last_name="User",
         email="admin@example.com",
         hourly_rate=25.00,
-        date_hired="2023-01-01",
+        date_hired=date(2023, 1, 1),
         status="active"
     )
     test_db.add(admin)
@@ -403,7 +404,7 @@ class TestRBACUtils:
             last_name="User",
             email="test@example.com",
             hourly_rate=15.00,
-            date_hired="2023-01-01",
+            date_hired=date(2023, 1, 1),
             status="active",
             role_id=role.role_id
         )
@@ -430,7 +431,7 @@ class TestRBACUtils:
             last_name="User",
             email="test@example.com",
             hourly_rate=15.00,
-            date_hired="2023-01-01",
+            date_hired=date(2023, 1, 1),
             status="active",
             role_id=role.role_id
         )
@@ -465,7 +466,7 @@ class TestRBACUtils:
             last_name="User",
             email="test@example.com",
             hourly_rate=15.00,
-            date_hired="2023-01-01",
+            date_hired=date(2023, 1, 1),
             status="active",
             role_id=role.role_id
         )
@@ -500,7 +501,7 @@ class TestRBACUtils:
             last_name="User",
             email="test@example.com",
             hourly_rate=15.00,
-            date_hired="2023-01-01",
+            date_hired=date(2023, 1, 1),
             status="active",
             role_id=role.role_id
         )

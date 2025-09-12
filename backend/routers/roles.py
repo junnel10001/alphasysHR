@@ -36,8 +36,7 @@ class RoleOut(BaseModel):
     description: str | None
     permissions: List[dict] = Field(default_factory=list)
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 class PermissionAssignment(BaseModel):
@@ -74,7 +73,21 @@ def list_roles(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     Retrieve a paginated list of roles with their permissions.
     """
     roles = db.query(Role).offset(skip).limit(limit).all()
-    return roles
+    
+    # Convert database models to Pydantic-compatible format
+    formatted_roles = []
+    for role in roles:
+        permissions = [{"permission_id": p.permission_id, "permission_name": p.permission_name, "description": p.description}
+                     for p in role.permissions]
+        formatted_role = {
+            "role_id": role.role_id,
+            "role_name": role.role_name,
+            "description": role.description,
+            "permissions": permissions
+        }
+        formatted_roles.append(formatted_role)
+    
+    return formatted_roles
 
 
 @router.get("/{role_id}", response_model=RoleOut)
@@ -85,7 +98,16 @@ def get_role(role_id: int, db: Session = Depends(get_db)):
     role = db.query(Role).filter(Role.role_id == role_id).first()
     if not role:
         raise HTTPException(status_code=404, detail="Role not found")
-    return role
+    # Convert database model to Pydantic-compatible format
+    permissions = [{"permission_id": p.permission_id, "permission_name": p.permission_name, "description": p.description}
+                 for p in role.permissions]
+    formatted_role = {
+        "role_id": role.role_id,
+        "role_name": role.role_name,
+        "description": role.description,
+        "permissions": permissions
+    }
+    return formatted_role
 
 
 @router.put("/{role_id}", response_model=RoleOut)
@@ -104,7 +126,16 @@ def update_role(role_id: int, role_update: RoleUpdate, db: Session = Depends(get
     
     db.commit()
     db.refresh(role)
-    return role
+    # Convert database model to Pydantic-compatible format
+    permissions = [{"permission_id": p.permission_id, "permission_name": p.permission_name, "description": p.description}
+                 for p in role.permissions]
+    formatted_role = {
+        "role_id": role.role_id,
+        "role_name": role.role_name,
+        "description": role.description,
+        "permissions": permissions
+    }
+    return formatted_role
 
 
 @router.delete("/{role_id}", status_code=status.HTTP_204_NO_CONTENT)

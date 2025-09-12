@@ -8,13 +8,15 @@ import os
 from datetime import datetime, timedelta
 
 from sqlalchemy.orm import Session
-from .database import get_db
+from .database import get_db, SessionLocal
 from .models import User
 
 app = FastAPI()
 
 # Include routers
-from .routers import employees, attendance, leave, payroll, permissions, roles, dashboard, employee_dashboard, overtime, activity, export
+from .routers import employees, attendance, leave, payroll, permissions, roles, dashboard, employee_dashboard, overtime, export
+# Temporarily commenting out activity router due to FastAPI response field validation issues
+# from .routers import activity
 app.include_router(employees.router)
 app.include_router(attendance.router)
 app.include_router(leave.router)
@@ -24,7 +26,7 @@ app.include_router(roles.router)
 app.include_router(dashboard.router)
 app.include_router(employee_dashboard.router)
 app.include_router(overtime.router)
-app.include_router(activity.router)
+# app.include_router(activity.router)
 app.include_router(export.router)
 
 

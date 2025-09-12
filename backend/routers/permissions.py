@@ -35,8 +35,7 @@ class PermissionOut(BaseModel):
     permission_name: str
     description: str
 
-    class Config:
-        orm_mode = True
+    model_config = {"from_attributes": True}
 
 
 @router.post("/", response_model=PermissionOut, status_code=status.HTTP_201_CREATED)

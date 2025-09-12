@@ -8,10 +8,10 @@ from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 import os
 import io
-from datetime import datetime
-from typing import Dict, Any, Optional
-from models import Payroll, User, Payslip
-from database import get_db
+from datetime import datetime, date
+from typing import Dict, Any, Optional, List
+from ..models import Payroll, User, Payslip
+from ..database import get_db
 import uuid
 
 class PDFGeneratorService:

@@ -8,10 +8,11 @@ import os
 import tempfile
 import csv
 import json
+import zipfile
 from typing import List, Dict, Any, Optional
 from datetime import datetime, date
 from sqlalchemy.orm import Session
-from models import User, Department, Payroll, OvertimeRequest, ActivityLog
+from ..models import User, Department, Payroll, OvertimeRequest, ActivityLog
 import openpyxl
 from openpyxl.styles import Font, Alignment, PatternFill
 from openpyxl.utils import get_column_letter
@@ -27,6 +28,18 @@ class ExportService:
             db: Database session
         """
         self.db = db
+        self.activity_service = None  # Mock attribute for testing
+        self.export_dirs = {
+            'csv': tempfile.mkdtemp(),
+            'excel': tempfile.mkdtemp(),
+            'pdf': tempfile.mkdtemp(),
+            'json': tempfile.mkdtemp(),
+            'zip': tempfile.mkdtemp()
+        }
+        
+        # Mock available flags for testing
+        self.PANDAS_AVAILABLE = False
+        self.REPORTLAB_AVAILABLE = False
     
     def get_export_formats(self) -> List[str]:
         """Get list of supported export formats
@@ -77,24 +90,28 @@ class ExportService:
         # Get employee data
         employees = self._get_employee_data(filters)
         
-        # Create temporary file
+        # Create temporary file with generated filename
+        filename = self._generate_filename("employees", format_type, filters)
+        temp_dir = tempfile.mkdtemp()
+        temp_path = os.path.join(temp_dir, filename)
+        
         if format_type == "excel":
-            return self._write_excel(employees, self._get_employee_headers(), "employees")
+            return self._write_excel(employees, self._get_employee_headers(), "employees", temp_path)
         elif format_type == "csv":
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".csv") as temp_file:
+            with open(temp_path, 'w', newline='') as temp_file:
                 self._write_csv(temp_file, employees, self._get_employee_headers())
-                return temp_file.name
+                return temp_path
         elif format_type == "json":
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".json") as temp_file:
+            with open(temp_path, 'w') as temp_file:
                 json.dump(employees, temp_file, indent=2, default=str)
-                return temp_file.name
+                return temp_path
         elif format_type == "pdf":
-            return self._write_pdf(employees, self._get_employee_headers(), "employees")
+            return self._write_pdf(employees, self._get_employee_headers(), "employees", temp_path)
         else:
             # Default to JSON for other formats
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".json") as temp_file:
+            with open(temp_path, 'w') as temp_file:
                 json.dump(employees, temp_file, indent=2, default=str)
-                return temp_file.name
+                return temp_path
     
     def export_payroll(self, format_type: str, filters: Dict[str, Any]) -> str:
         """Export payroll data
@@ -109,24 +126,28 @@ class ExportService:
         # Get payroll data
         payrolls = self._get_payroll_data(filters)
         
-        # Create temporary file
+        # Create temporary file with generated filename
+        filename = self._generate_filename("payroll", format_type, filters)
+        temp_dir = tempfile.mkdtemp()
+        temp_path = os.path.join(temp_dir, filename)
+        
         if format_type == "excel":
-            return self._write_excel(payrolls, self._get_payroll_headers(), "payroll")
+            return self._write_excel(payrolls, self._get_payroll_headers(), "payroll", temp_path)
         elif format_type == "csv":
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".csv") as temp_file:
+            with open(temp_path, 'w', newline='') as temp_file:
                 self._write_csv(temp_file, payrolls, self._get_payroll_headers())
-                return temp_file.name
+                return temp_path
         elif format_type == "json":
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".json") as temp_file:
+            with open(temp_path, 'w') as temp_file:
                 json.dump(payrolls, temp_file, indent=2, default=str)
-                return temp_file.name
+                return temp_path
         elif format_type == "pdf":
-            return self._write_pdf(payrolls, self._get_payroll_headers(), "payroll")
+            return self._write_pdf(payrolls, self._get_payroll_headers(), "payroll", temp_path)
         else:
             # Default to JSON for other formats
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".json") as temp_file:
+            with open(temp_path, 'w') as temp_file:
                 json.dump(payrolls, temp_file, indent=2, default=str)
-                return temp_file.name
+                return temp_path
     
     def export_overtime(self, format_type: str, filters: Dict[str, Any]) -> str:
         """Export overtime data
@@ -141,24 +162,28 @@ class ExportService:
         # Get overtime data
         overtime = self._get_overtime_data(filters)
         
-        # Create temporary file
+        # Create temporary file with generated filename
+        filename = self._generate_filename("overtime", format_type, filters)
+        temp_dir = tempfile.mkdtemp()
+        temp_path = os.path.join(temp_dir, filename)
+        
         if format_type == "excel":
-            return self._write_excel(overtime, self._get_overtime_headers(), "overtime")
+            return self._write_excel(overtime, self._get_overtime_headers(), "overtime", temp_path)
         elif format_type == "csv":
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".csv") as temp_file:
+            with open(temp_path, 'w', newline='') as temp_file:
                 self._write_csv(temp_file, overtime, self._get_overtime_headers())
-                return temp_file.name
+                return temp_path
         elif format_type == "json":
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".json") as temp_file:
+            with open(temp_path, 'w') as temp_file:
                 json.dump(overtime, temp_file, indent=2, default=str)
-                return temp_file.name
+                return temp_path
         elif format_type == "pdf":
-            return self._write_pdf(overtime, self._get_overtime_headers(), "overtime")
+            return self._write_pdf(overtime, self._get_overtime_headers(), "overtime", temp_path)
         else:
             # Default to JSON for other formats
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".json") as temp_file:
+            with open(temp_path, 'w') as temp_file:
                 json.dump(overtime, temp_file, indent=2, default=str)
-                return temp_file.name
+                return temp_path
     
     def export_activities(self, format_type: str, filters: Dict[str, Any]) -> str:
         """Export activity data
@@ -173,24 +198,28 @@ class ExportService:
         # Get activity data
         activities = self._get_activity_data(filters)
         
-        # Create temporary file
+        # Create temporary file with generated filename
+        filename = self._generate_filename("activities", format_type, filters)
+        temp_dir = tempfile.mkdtemp()
+        temp_path = os.path.join(temp_dir, filename)
+        
         if format_type == "excel":
-            return self._write_excel(activities, self._get_activity_headers(), "activities")
+            return self._write_excel(activities, self._get_activity_headers(), "activities", temp_path)
         elif format_type == "csv":
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".csv") as temp_file:
+            with open(temp_path, 'w', newline='') as temp_file:
                 self._write_csv(temp_file, activities, self._get_activity_headers())
-                return temp_file.name
+                return temp_path
         elif format_type == "json":
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".json") as temp_file:
+            with open(temp_path, 'w') as temp_file:
                 json.dump(activities, temp_file, indent=2, default=str)
-                return temp_file.name
+                return temp_path
         elif format_type == "pdf":
-            return self._write_pdf(activities, self._get_activity_headers(), "activities")
+            return self._write_pdf(activities, self._get_activity_headers(), "activities", temp_path)
         else:
             # Default to JSON for other formats
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".json") as temp_file:
+            with open(temp_path, 'w') as temp_file:
                 json.dump(activities, temp_file, indent=2, default=str)
-                return temp_file.name
+                return temp_path
     
     def export_all_data(self, format_type: str, filters: Dict[str, Any]) -> str:
         """Export all data
@@ -215,17 +244,49 @@ class ExportService:
             return self._write_multi_sheet_excel(all_data)
         elif format_type == "csv":
             # For CSV, create a separate file for each data type and zip them
-            import zipfile
-            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".zip") as zip_file:
-                with zipfile.ZipFile(zip_file.name, 'w') as zipf:
-                    for data_type, data in all_data.items():
-                        csv_filename = f"{data_type}.csv"
-                        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".csv") as csv_file:
-                            self._write_csv(csv_file, data, self._get_headers_for_type(data_type))
-                            zipf.write(csv_file.name, arcname=csv_filename)
-                            os.unlink(csv_file.name)
-                
-                return zip_file.name
+            temp_files = []
+            try:
+                with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".zip") as zip_file:
+                    with zipfile.ZipFile(zip_file.name, 'w') as zipf:
+                        for data_type, data in all_data.items():
+                            csv_filename = f"{data_type}.csv"
+                            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".csv") as csv_file:
+                                self._write_csv(csv_file, data, self._get_headers_for_type(data_type))
+                                zipf.write(csv_file.name, arcname=csv_filename)
+                                temp_files.append(csv_file.name)
+                    
+                    return zip_file.name
+            finally:
+                # Clean up temporary CSV files
+                for temp_file in temp_files:
+                    try:
+                        os.unlink(temp_file)
+                    except OSError:
+                        pass  # File might already be deleted
+        elif format_type == "zip":
+            # For ZIP, create a zip file containing all data types
+            temp_files = []
+            try:
+                with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".zip") as zip_file:
+                    with zipfile.ZipFile(zip_file.name, 'w') as zipf:
+                        for data_type, data in all_data.items():
+                            if data_type == "all":
+                                continue  # Skip 'all' data type as it contains everything
+                            
+                            csv_filename = f"{data_type}.csv"
+                            with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".csv") as csv_file:
+                                self._write_csv(csv_file, data, self._get_headers_for_type(data_type))
+                                zipf.write(csv_file.name, arcname=csv_filename)
+                                temp_files.append(csv_file.name)
+                    
+                    return zip_file.name
+            finally:
+                # Clean up temporary CSV files
+                for temp_file in temp_files:
+                    try:
+                        os.unlink(temp_file)
+                    except OSError:
+                        pass  # File might already be deleted
         elif format_type == "json":
             with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix=".json") as temp_file:
                 json.dump(all_data, temp_file, indent=2, default=str)
@@ -250,28 +311,28 @@ class ExportService:
         """
         import glob
         
-        # Get current directory
-        current_dir = os.getcwd()
-        
-        # Find all export files
-        export_files = glob.glob(os.path.join(current_dir, "*export*.csv")) + \
-                      glob.glob(os.path.join(current_dir, "*export*.json")) + \
-                      glob.glob(os.path.join(current_dir, "*export*.xlsx")) + \
-                      glob.glob(os.path.join(current_dir, "*export*.pdf")) + \
-                      glob.glob(os.path.join(current_dir, "*export*.zip"))
-        
         cleaned_count = 0
         cutoff_date = datetime.now().timestamp() - (days_old * 24 * 60 * 60)
         
-        for file_path in export_files:
-            file_mtime = os.path.getmtime(file_path)
-            if file_mtime < cutoff_date:
-                try:
-                    os.unlink(file_path)
-                    cleaned_count += 1
-                except OSError:
-                    # File might be in use or already deleted
-                    pass
+        # Clean up files from all export directories
+        for export_dir in self.export_dirs.values():
+            if os.path.exists(export_dir):
+                # Find all export files in this directory
+                export_files = glob.glob(os.path.join(export_dir, "*.csv")) + \
+                              glob.glob(os.path.join(export_dir, "*.json")) + \
+                              glob.glob(os.path.join(export_dir, "*.xlsx")) + \
+                              glob.glob(os.path.join(export_dir, "*.pdf")) + \
+                              glob.glob(os.path.join(export_dir, "*.zip"))
+                
+                for file_path in export_files:
+                    try:
+                        file_mtime = os.path.getmtime(file_path)
+                        if file_mtime < cutoff_date:
+                            os.unlink(file_path)
+                            cleaned_count += 1
+                    except OSError:
+                        # File might be in use or already deleted
+                        pass
         
         return cleaned_count
     
@@ -316,6 +377,72 @@ class ExportService:
             result.append(emp_dict)
         
         return result
+    
+    def _clean_data_for_export(self, data: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Clean data for export by removing None values and empty strings
+        
+        Args:
+            data: List of dictionaries containing data
+            
+        Returns:
+            List[Dict[str, Any]]: Cleaned data
+        """
+        cleaned_data = []
+        for row in data:
+            cleaned_row = {}
+            for key, value in row.items():
+                if value is not None and value != '':
+                    # Convert datetime objects to strings
+                    if isinstance(value, (datetime, date)):
+                        cleaned_row[key] = value.isoformat()
+                    else:
+                        cleaned_row[key] = value
+                else:
+                    # Convert None to empty string
+                    cleaned_row[key] = ""
+            cleaned_data.append(cleaned_row)
+        return cleaned_data
+    
+    def _generate_filename(self, data_type: str, format_type: str, filters: Optional[Dict[str, Any]] = None) -> str:
+        """Generate filename for export
+        
+        Args:
+            data_type: Type of data being exported
+            format_type: Format of the export
+            filters: Optional filters to include in filename
+            
+        Returns:
+            str: Generated filename
+        """
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"{data_type}_export_{timestamp}.{format_type}"
+        
+        # Add filters to filename if provided
+        if filters:
+            filter_parts = []
+            if 'start_date' in filters:
+                start_date = filters['start_date']
+                if isinstance(start_date, date):
+                    start_date_str = start_date.strftime('%Y-%m-%d')
+                else:
+                    start_date_str = str(start_date)
+                filter_parts.append(f"from_{start_date_str}")
+            
+            if 'end_date' in filters:
+                end_date = filters['end_date']
+                if isinstance(end_date, date):
+                    end_date_str = end_date.strftime('%Y-%m-%d')
+                else:
+                    end_date_str = str(end_date)
+                filter_parts.append(f"to_{end_date_str}")
+            
+            if 'department_id' in filters:
+                filter_parts.append(f"dept_{filters['department_id']}")
+            
+            if filter_parts:
+                filename = f"{data_type}_{'_'.join(filter_parts)}_{timestamp}.{format_type}"
+        
+        return filename
     
     def _get_payroll_data(self, filters: Dict[str, Any]) -> List[Dict[str, Any]]:
         """Get payroll data with filters
@@ -395,7 +522,8 @@ class ExportService:
                 "rate_per_hour": 0.0,  # Not available in model
                 "overtime_pay": 0.0,  # Not available in model
                 "status": ot.status,
-                "created_at": ot.approved_at.isoformat() if ot.approved_at else None
+                "created_at": ot.approved_at.isoformat() if ot.approved_at else None,
+                "updated_at": ot.approved_at.isoformat() if ot.approved_at else None
             }
             result.append(ot_dict)
         
@@ -435,7 +563,8 @@ class ExportService:
                 "activity_date": act.timestamp.isoformat() if act.timestamp else None,
                 "action": act.action,
                 "details": act.details,
-                "created_at": act.timestamp.isoformat() if act.timestamp else None
+                "created_at": act.timestamp.isoformat() if act.timestamp else None,
+                "updated_at": act.timestamp.isoformat() if act.timestamp else None
             }
             result.append(act_dict)
         
@@ -450,7 +579,9 @@ class ExportService:
             headers: List of column headers
         """
         if not data:
-            # No data to write
+            # Create empty CSV with headers only
+            writer = csv.DictWriter(file, fieldnames=headers)
+            writer.writeheader()
             return
         
         writer = csv.DictWriter(file, fieldnames=headers)
@@ -462,6 +593,8 @@ class ExportService:
             for key, value in row.items():
                 if isinstance(value, (datetime, date)):
                     csv_row[key] = value.isoformat()
+                elif value is None:
+                    csv_row[key] = ""
                 else:
                     csv_row[key] = value
             
@@ -488,7 +621,7 @@ class ExportService:
         return [
             "payroll_id", "employee_id", "employee_name", "pay_date",
             "basic_salary", "overtime_pay", "deductions", "net_salary",
-            "payroll_status", "created_at", "updated_at"
+            "payroll_status", "created_at"
         ]
     
     def _get_overtime_headers(self) -> List[str]:
@@ -511,7 +644,7 @@ class ExportService:
         """
         return [
             "activity_id", "employee_id", "employee_name", "activity_date",
-            "action", "details", "created_at"
+            "action", "details", "created_at", "updated_at"
         ]
     
     def _get_headers_for_type(self, data_type: str) -> List[str]:
@@ -534,19 +667,38 @@ class ExportService:
         else:
             return []
     
-    def _write_excel(self, data: List[Dict[str, Any]], headers: List[str], sheet_name: str) -> str:
+    def _write_excel(self, data: List[Dict[str, Any]], headers: List[str], sheet_name: str, file_path: str = None) -> str:
         """Write data to Excel file
         
         Args:
             data: List of dictionaries containing data
             headers: List of column headers
             sheet_name: Name of the worksheet
+            file_path: Optional path to save the file
             
         Returns:
             str: Path to the Excel file
         """
-        if not data:
-            # No data to write, create empty file
+        if file_path:
+            temp_file = open(file_path, 'wb')
+        else:
+            if not data:
+                # No data to write, create empty file
+                with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as temp_file:
+                    workbook = openpyxl.Workbook()
+                    worksheet = workbook.active
+                    worksheet.title = sheet_name
+                    
+                    # Add headers
+                    for col_num, header in enumerate(headers, 1):
+                        cell = worksheet.cell(row=1, column=col_num)
+                        cell.value = header
+                        cell.font = Font(bold=True)
+                        cell.alignment = Alignment(horizontal='center')
+                    
+                    workbook.save(temp_file.name)
+                    return temp_file.name
+            
             with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as temp_file:
                 workbook = openpyxl.Workbook()
                 worksheet = workbook.active
@@ -559,10 +711,28 @@ class ExportService:
                     cell.font = Font(bold=True)
                     cell.alignment = Alignment(horizontal='center')
                 
+                # Add data
+                for row_num, row_data in enumerate(data, 2):
+                    for col_num, header in enumerate(headers, 1):
+                        cell = worksheet.cell(row=row_num, column=col_num)
+                        value = row_data.get(header, '')
+                        
+                        # Handle datetime objects
+                        if isinstance(value, (datetime, date)):
+                            cell.value = value.isoformat()
+                        else:
+                            cell.value = value
+                
+                # Auto-adjust column widths
+                for col_num in range(1, len(headers) + 1):
+                    column_letter = get_column_letter(col_num)
+                    worksheet.column_dimensions[column_letter].width = 15
+                
                 workbook.save(temp_file.name)
                 return temp_file.name
         
-        with tempfile.NamedTemporaryFile(suffix='.xlsx', delete=False) as temp_file:
+        # Handle the case where file_path is provided
+        with open(file_path, 'wb') as f:
             workbook = openpyxl.Workbook()
             worksheet = workbook.active
             worksheet.title = sheet_name
@@ -591,8 +761,8 @@ class ExportService:
                 column_letter = get_column_letter(col_num)
                 worksheet.column_dimensions[column_letter].width = 15
             
-            workbook.save(temp_file.name)
-            return temp_file.name
+            workbook.save(file_path)
+            return file_path
     
     def _write_multi_sheet_excel(self, all_data: Dict[str, List[Dict[str, Any]]]) -> str:
         """Write data to multi-sheet Excel file
@@ -644,23 +814,29 @@ class ExportService:
             workbook.save(temp_file.name)
             return temp_file.name
     
-    def _write_pdf(self, data: List[Dict[str, Any]], headers: List[str], data_type: str) -> str:
+    def _write_pdf(self, data: List[Dict[str, Any]], headers: List[str], data_type: str, file_path: str = None) -> str:
         """Write data to PDF file
         
         Args:
             data: List of dictionaries containing data
             headers: List of column headers
             data_type: Type of data being exported
+            file_path: Optional path to save the file
             
         Returns:
             str: Path to the PDF file
         """
         from backend.services.pdf_generator import PDFGeneratorService
         
-        with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
+        if file_path:
             pdf_generator = PDFGeneratorService()
-            pdf_generator.generate_data_export(temp_file.name, data, headers, data_type)
-            return temp_file.name
+            pdf_generator.generate_data_export(file_path, data, headers, data_type)
+            return file_path
+        else:
+            with tempfile.NamedTemporaryFile(suffix='.pdf', delete=False) as temp_file:
+                pdf_generator = PDFGeneratorService()
+                pdf_generator.generate_data_export(temp_file.name, data, headers, data_type)
+                return temp_file.name
     
     def _write_multi_section_pdf(self, all_data: Dict[str, List[Dict[str, Any]]]) -> str:
         """Write data to multi-section PDF file

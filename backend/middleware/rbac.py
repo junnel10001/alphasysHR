@@ -11,8 +11,9 @@ from fastapi.security import HTTPAuthorizationCredentials
 from fastapi.security import HTTPBearer
 from sqlalchemy.orm import Session
 
-from database import get_db
-from models import User, Permission, Role, RolePermission
+# Import dependencies to avoid circular imports
+from ..database import get_db
+from ..models import User, Permission, Role, RolePermission
 
 security = HTTPBearer()
 
@@ -30,7 +31,10 @@ def get_current_user(credentials: HTTPAuthorizationCredentials = Depends(securit
     Raises:
         HTTPException: If token is invalid or user not found
     """
-    from main import SECRET_KEY, ALGORITHM
+    # Import directly to avoid circular imports
+    import os
+    SECRET_KEY = os.getenv("JWT_SECRET", "supersecretkey")
+    ALGORITHM = "HS256"
     import jwt
     
     try:
@@ -149,23 +153,16 @@ def user_has_permission(user: User, permission_name: str, db: Session) -> bool:
     Returns:
         bool: True if user has permission, False otherwise
     """
-    print(f'DEBUG: user_has_permission called with user_id={user.user_id}, role_id={user.role_id}, role_name={user.role_name}, permission_name={permission_name}')
-    
     # If role_id is None, try to use role_name to find the role
     if user.role_id is None and user.role_name:
-        print(f'DEBUG: role_id is None, using role_name={user.role_name} to find role')
         role = db.query(Role).filter(Role.role_name == user.role_name).first()
         if role:
-            print(f'DEBUG: Found role: {role} with role_id={role.role_id}')
-            # Use the found role_id for permission check
             role_id = role.role_id
         else:
-            print(f'DEBUG: No role found with name {user.role_name}')
             return False
     elif user.role_id is not None:
         role_id = user.role_id
     else:
-        print(f'DEBUG: No role_id or role_name available')
         return False
     
     # Get all permissions for the user's role through the association table
@@ -177,10 +174,6 @@ def user_has_permission(user: User, permission_name: str, db: Session) -> bool:
         Role.role_id == role_id,
         Permission.permission_name == permission_name
     ).all()
-    
-    print(f'DEBUG: Query returned {len(permissions)} permissions')
-    for p in permissions:
-        print(f'DEBUG: Found permission: {p.permission_name}')
     
     return len(permissions) > 0
 
@@ -240,6 +233,43 @@ class PermissionChecker:
     """
     
     @staticmethod
+    def user_has_permission(user: User, permission_name: str, db: Session) -> bool:
+        """
+        Check if a user has a specific permission.
+        
+        Args:
+            user: The user to check
+            permission_name: The name of the permission
+            db: Database session
+            
+        Returns:
+            bool: True if user has permission, False otherwise
+        """
+        # If role_id is None, try to use role_name to find the role
+        if user.role_id is None and user.role_name:
+            role = db.query(Role).filter(Role.role_name == user.role_name).first()
+            if role:
+                role_id = role.role_id
+            else:
+                return False
+        elif user.role_id is not None:
+            role_id = user.role_id
+        else:
+            return False
+        
+        # Get all permissions for the user's role through the association table
+        permissions = db.query(Permission).join(
+            RolePermission, Permission.permission_id == RolePermission.permission_id
+        ).join(
+            Role, RolePermission.role_id == Role.role_id
+        ).filter(
+            Role.role_id == role_id,
+            Permission.permission_name == permission_name
+        ).all()
+        
+        return len(permissions) > 0
+    
+    @staticmethod
     def require_permission(permission_name: str):
         """
         Middleware to require a specific permission.
@@ -273,7 +303,10 @@ class PermissionChecker:
         """
         async def checker(credentials: HTTPAuthorizationCredentials = Depends(security), db: Session = Depends(get_db)) -> tuple[User, Session]:
             # Get the user using the current database session
-            from main import SECRET_KEY, ALGORITHM
+            # Import directly to avoid circular imports
+            import os
+            SECRET_KEY = os.getenv("JWT_SECRET", "supersecretkey")
+            ALGORITHM = "HS256"
             import jwt
             
             try:
@@ -288,13 +321,8 @@ class PermissionChecker:
                     )
                 
                 # Get user from the same database session with explicit join to load role
-                print(f'DEBUG: Looking for user with username: {username}')
                 from sqlalchemy.orm import joinedload
                 user = db.query(User).options(joinedload(User.role_obj)).filter(User.username == username).first()
-                print(f'DEBUG: Found user: {user}')
-                if user:
-                    print(f'DEBUG: User role_id: {user.role_id}')
-                    print(f'DEBUG: User role_name: {user.role_name}')
                 if user is None:
                     raise HTTPException(
                         status_code=status.HTTP_401_UNAUTHORIZED,

@@ -13,10 +13,10 @@ import pandas as pd
 from fastapi import WebSocket, WebSocketDisconnect
 from contextlib import asynccontextmanager
 
-from backend.utils.logger import EnhancedLogger
-from backend.utils.json_logger import JsonLogger
-from backend.utils.performance_monitor import performance_monitor
-from backend.utils.log_aggregator import log_aggregator
+from .logger import ActivityLogger as EnhancedLogger
+from .json_logger import JSONActivityLogger as JsonLogger
+from .performance_monitor import performance_monitor
+from .log_aggregator import log_aggregator
 
 
 @dataclass
@@ -69,7 +69,7 @@ class RealtimeDashboard:
         self.metrics_dir.mkdir(parents=True, exist_ok=True)
         
         # Setup logging
-        self.logger = EnhancedLogger("dashboard_integration")
+        self.logger = EnhancedLogger()
         self.json_logger = JsonLogger()
         
         # Metrics storage
