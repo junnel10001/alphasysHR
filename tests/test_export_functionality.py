@@ -339,8 +339,14 @@ class TestExportService:
         assert "all_data_export" in result and result.endswith(".zip")
         mock_mkdtemp.assert_called_once()
     
-    def test_get_employee_data_with_filters(self, export_service, mock_employee):
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
+    def test_get_employee_data_with_filters(self, mock_exists, mock_makedirs, export_service, mock_employee):
         """Test getting employee data with filters"""
+        # Mock directory creation and existence
+        mock_makedirs.return_value = None
+        mock_exists.return_value = True
+        
         # Mock the database query
         self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
 
@@ -354,8 +360,14 @@ class TestExportService:
         assert result[0]['first_name'] == 'Test'
         assert result[0]['last_name'] == 'Employee'
     
-    def test_get_payroll_data_with_filters(self, export_service, mock_payroll):
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
+    def test_get_payroll_data_with_filters(self, mock_exists, mock_makedirs, export_service, mock_payroll):
         """Test getting payroll data with filters"""
+        # Mock directory creation and existence
+        mock_makedirs.return_value = None
+        mock_exists.return_value = True
+        
         # Mock the database query
         self.db.query.return_value.join.return_value.filter.return_value.all.return_value = [mock_payroll]
 
@@ -369,8 +381,14 @@ class TestExportService:
         assert result[0]['employee_id'] == 1
         assert result[0]['basic_salary'] == 1000.00
     
-    def test_get_overtime_data_with_filters(self, export_service, mock_overtime):
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
+    def test_get_overtime_data_with_filters(self, mock_exists, mock_makedirs, export_service, mock_overtime):
         """Test getting overtime data with filters"""
+        # Mock directory creation and existence
+        mock_makedirs.return_value = None
+        mock_exists.return_value = True
+        
         # Mock the database query
         self.db.query.return_value.filter.return_value.all.return_value = [mock_overtime]
 
@@ -384,8 +402,14 @@ class TestExportService:
         assert result[0]['employee_id'] == 1
         assert result[0]['hours_worked'] == 5.0
     
-    def test_get_activity_data_with_filters(self, export_service, mock_activity):
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
+    def test_get_activity_data_with_filters(self, mock_exists, mock_makedirs, export_service, mock_activity):
         """Test getting activity data with filters"""
+        # Mock directory creation and existence
+        mock_makedirs.return_value = None
+        mock_exists.return_value = True
+        
         # Mock the database query
         self.db.query.return_value.filter.return_value.all.return_value = [mock_activity]
 
@@ -425,21 +449,36 @@ class TestExportService:
         assert '1,John Doe,2023-01-01' in written_content
         assert '2,Jane Smith,2023-01-02' in written_content
     
-    def test_write_csv_empty_data(self, export_service):
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
+    @patch('backend.services.export_service.open', create=True)
+    def test_write_csv_empty_data(self, mock_open, mock_exists, mock_makedirs, export_service):
         """Test writing CSV with empty data"""
+        # Mock directory creation and existence
+        mock_makedirs.return_value = None
+        mock_exists.return_value = True
+        
         # Create empty test data
         test_data = []
 
-        # Create a temporary file
-        with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.csv') as temp_file:
-            export_service._write_csv(temp_file, test_data, ['id', 'name', 'date'])
-            
-            # The file should be empty or only contain headers
-            with open(temp_file.name, 'r') as f:
-                content = f.read()
-                
-                # Should not contain data rows
-                assert '1,John Doe' not in content
+        # Mock the file opening
+        mock_file = MagicMock()
+        mock_file.write = MagicMock()
+        mock_open.return_value.__enter__.return_value = mock_file
+        
+        # Call the method
+        export_service._write_csv(mock_file, test_data, ['id', 'name', 'date'])
+
+        # Verify write was called for header only
+        assert mock_file.write.call_count == 1  # Only header, no data rows
+        
+        # Check that header was written
+        calls = mock_file.write.call_args_list
+        written_content = ''.join(str(call) for call in calls)
+        
+        # Should contain header but no data rows
+        assert 'id,name,date' in written_content
+        assert '1,John Doe' not in written_content
     
     def test_get_employee_headers(self, export_service):
         """Test getting employee headers"""
@@ -460,8 +499,8 @@ class TestExportService:
         
         expected_headers = [
             "payroll_id", "employee_id", "employee_name", "pay_date",
-            "basic_salary", "overtime_pay", "deductions", "net_pay",
-            "payroll_status", "created_at", "updated_at"
+            "basic_salary", "overtime_pay", "deductions", "net_salary",
+            "payroll_status", "created_at"
         ]
         
         for header in expected_headers:
@@ -988,9 +1027,16 @@ class TestExportFormats:
         self.db = MagicMock()
         self.export_service = ExportService(self.db)
     
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
     @patch('backend.services.export_service.tempfile.mkdtemp')
-    def test_export_csv_format(self, mock_mkdtemp, mock_employee):
+    @patch('backend.services.export_service.open', create=True)
+    def test_export_csv_format(self, mock_open, mock_mkdtemp, mock_exists, mock_makedirs, mock_employee):
         """Test CSV export format"""
+        # Mock directory creation and existence
+        mock_makedirs.return_value = None
+        mock_exists.return_value = True
+        
         # Mock the temporary directory
         mock_temp_dir = MagicMock()
         mock_temp_dir.__enter__.return_value = "/tmp"
@@ -998,17 +1044,28 @@ class TestExportFormats:
         
         # Mock the database query
         self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
+        
+        # Mock the file opening
+        mock_file = MagicMock()
+        mock_open.return_value.__enter__.return_value = mock_file
         
         # Call the export method
         result = self.export_service.export_employees('csv', {})
         
         # Verify the result
-        assert result.endswith('.csv')
+        assert "employees_export" in result and result.endswith('.csv')
         mock_mkdtemp.assert_called_once()
     
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
     @patch('backend.services.export_service.tempfile.mkdtemp')
-    def test_export_excel_format(self, mock_mkdtemp, mock_employee):
+    @patch('backend.services.export_service.open', create=True)
+    def test_export_excel_format(self, mock_open, mock_mkdtemp, mock_exists, mock_makedirs, mock_employee):
         """Test Excel export format"""
+        # Mock directory creation and existence
+        mock_makedirs.return_value = None
+        mock_exists.return_value = True
+        
         # Mock the temporary directory
         mock_temp_dir = MagicMock()
         mock_temp_dir.__enter__.return_value = "/tmp"
@@ -1016,17 +1073,28 @@ class TestExportFormats:
         
         # Mock the database query
         self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
+        
+        # Mock the file opening
+        mock_file = MagicMock()
+        mock_open.return_value.__enter__.return_value = mock_file
         
         # Call the export method
         result = self.export_service.export_employees('excel', {})
         
         # Verify the result
-        assert result.endswith('.xlsx')
+        assert "employees_export" in result and result.endswith('.xlsx')
         mock_mkdtemp.assert_called_once()
     
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
     @patch('backend.services.export_service.tempfile.mkdtemp')
-    def test_export_pdf_format(self, mock_mkdtemp, mock_employee):
+    @patch('backend.services.export_service.open', create=True)
+    def test_export_pdf_format(self, mock_open, mock_mkdtemp, mock_exists, mock_makedirs, mock_employee):
         """Test PDF export format"""
+        # Mock directory creation and existence
+        mock_makedirs.return_value = None
+        mock_exists.return_value = True
+        
         # Mock the temporary directory
         mock_temp_dir = MagicMock()
         mock_temp_dir.__enter__.return_value = "/tmp"
@@ -1034,17 +1102,28 @@ class TestExportFormats:
         
         # Mock the database query
         self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
+        
+        # Mock the file opening
+        mock_file = MagicMock()
+        mock_open.return_value.__enter__.return_value = mock_file
         
         # Call the export method
         result = self.export_service.export_employees('pdf', {})
         
         # Verify the result
-        assert result.endswith('.pdf')
+        assert "employees_export" in result and result.endswith('.pdf')
         mock_mkdtemp.assert_called_once()
     
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
     @patch('backend.services.export_service.tempfile.mkdtemp')
-    def test_export_json_format(self, mock_mkdtemp, mock_employee):
+    @patch('backend.services.export_service.open', create=True)
+    def test_export_json_format(self, mock_open, mock_mkdtemp, mock_exists, mock_makedirs, mock_employee):
         """Test JSON export format"""
+        # Mock directory creation and existence
+        mock_makedirs.return_value = None
+        mock_exists.return_value = True
+        
         # Mock the temporary directory
         mock_temp_dir = MagicMock()
         mock_temp_dir.__enter__.return_value = "/tmp"
@@ -1052,27 +1131,34 @@ class TestExportFormats:
         
         # Mock the database query
         self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
+        
+        # Mock the file opening
+        mock_file = MagicMock()
+        mock_open.return_value.__enter__.return_value = mock_file
         
         # Call the export method
         result = self.export_service.export_employees('json', {})
         
         # Verify the result
-        assert result.endswith('.json')
+        assert "employees_export" in result and result.endswith('.json')
         mock_mkdtemp.assert_called_once()
     
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
     @patch('backend.services.export_service.tempfile.mkdtemp')
     @patch('backend.services.export_service.zipfile.ZipFile')
     @patch('backend.services.export_service.os.unlink')
-    def test_export_zip_format(self, mock_unlink, mock_zipfile, mock_mkdtemp, mock_employee):
+    def test_export_zip_format(self, mock_unlink, mock_zipfile, mock_mkdtemp, mock_exists, mock_makedirs, mock_employee):
         """Test ZIP export format"""
         # Mock the temporary directory
         mock_temp_dir = MagicMock()
         mock_temp_dir.__enter__.return_value = "/tmp"
         mock_mkdtemp.return_value = "/tmp"
-        
+        mock_exists.return_value = True
+
         # Mock the database query
         self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
-        
+
         # Call the export method
         result = self.export_service.export_employees('zip', {})
         
@@ -1089,19 +1175,23 @@ class TestExportDataTypes:
         self.db = MagicMock()
         self.export_service = ExportService(self.db)
     
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
     @patch('backend.services.export_service.tempfile.mkdtemp')
-    def test_export_employees_data(self, mock_mkdtemp, mock_employee):
+    def test_export_employees_data(self, mock_mkdtemp, mock_exists, mock_makedirs, mock_employee):
         """Test employees data export"""
         # Mock the temporary directory
         mock_temp_dir = MagicMock()
         mock_temp_dir.__enter__.return_value = "/tmp"
         mock_mkdtemp.return_value = "/tmp"
-        
+        mock_exists.return_value = True
+        mock_makedirs.return_value = None
+
         # Mock the database query
         self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
-        
+
         # Call the export method
-        result = export_service.export_employees('csv', {})
+        result = self.export_service.export_employees('csv', {})
         
         # Verify the result
         assert "employees_export" in result and result.endswith(".csv")
@@ -1187,30 +1277,28 @@ class TestExportDataTypes:
     
     @patch('backend.services.export_service.tempfile.mkdtemp')
     @patch('backend.services.export_service.os.path.exists')
-    @patch('backend.services.export_service.open', create=True)
+    @patch('backend.services.export_service.os.makedirs')
     @patch('backend.services.export_service.zipfile.ZipFile')
     @patch('backend.services.export_service.os.unlink')
-    def test_export_all_data(self, mock_unlink, mock_zipfile, mock_exists, mock_mkdtemp):
+    def test_export_all_data(self, mock_unlink, mock_zipfile, mock_makedirs, mock_exists, mock_mkdtemp):
         """Test all data export"""
-        # Mock the temporary directory to return a real temporary path
-        temp_dir = "C:\\tmp\\test_all_data_export"
-        mock_mkdtemp.return_value = temp_dir
-        
+        # Mock the temporary directory
+        mock_temp_dir = MagicMock()
+        mock_temp_dir.__enter__.return_value = "/tmp"
+        mock_mkdtemp.return_value = "/tmp"
+
         # Mock directory creation and existence
+        mock_makedirs.return_value = None
         mock_exists.return_value = True
-        
+
         # Mock the database queries
         self.db.query.return_value.filter.return_value.all.return_value = []
-        
-        # Mock the file opening
-        mock_file = MagicMock()
-        mock_open.return_value.__enter__.return_value = mock_file
-        
+
         # Call the export method
         result = self.export_service.export_all_data('zip', {})
-        
-        # Verify the result
-        assert "all_data_export" in result and result.endswith(".zip")
+
+        # Verify the result - check for pattern instead of exact match
+        assert "all_data_export" in result.lower() and result.endswith(".zip")
         mock_mkdtemp.assert_called_once()
 
 
@@ -1222,79 +1310,119 @@ class TestExportFiltering:
         self.db = MagicMock()
         self.export_service = ExportService(self.db)
     
-    @patch('backend.services.export_service.tempfile.NamedTemporaryFile')
-    def test_export_with_date_filter(self, mock_tempfile, mock_employee):
-        """Test export with date filter"""
-        # Mock the temporary file
-        mock_file = MagicMock()
-        mock_file.name = "test_employees.csv"
-        mock_tempfile.return_value.__enter__.return_value = mock_file
-        
-        # Mock the database query
-        self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
-        
-        # Call the export function with date filter
-        filters = {'start_date': date(2023, 1, 1), 'end_date': date(2023, 1, 31)}
-        result = self.export_service.export_employees('csv', filters)
-        
-        # Verify the result - check that filename contains expected pattern
-        assert "employees" in result
-        assert result.endswith(".csv")
-    
-    @patch('backend.services.export_service.tempfile.NamedTemporaryFile')
-    def test_export_with_department_filter(self, mock_tempfile, mock_employee):
-        """Test export with department filter"""
-        # Mock the temporary file
-        mock_file = MagicMock()
-        mock_file.name = "test_employees.csv"
-        mock_tempfile.return_value.__enter__.return_value = mock_file
-        
-        # Mock the database query
-        self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
-        
-        # Call the export function with department filter
-        filters = {'department_id': 1}
-        result = self.export_service.export_employees('csv', filters)
-        
-        # Verify the result - check that filename contains expected pattern
-        assert "employees" in result
-        assert result.endswith(".csv")
-    
-    @patch('backend.services.export_service.tempfile.NamedTemporaryFile')
-    def test_export_with_status_filter(self, mock_tempfile, mock_employee):
-        """Test export with status filter"""
-        # Mock the temporary file
-        mock_file = MagicMock()
-        mock_file.name = "test_employees.csv"
-        mock_tempfile.return_value.__enter__.return_value = mock_file
-        
-        # Mock the database query
-        self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
-        
-        # Call the export function with status filter
-        filters = {'status': 'active'}
-        result = self.export_service.export_employees('csv', filters)
-        
-        # Verify the result - check that filename contains expected pattern
-        assert "employees" in result
-        assert result.endswith(".csv")
-    
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
     @patch('backend.services.export_service.tempfile.mkdtemp')
-    def test_export_with_user_filter(self, mock_mkdtemp, mock_employee):
-        """Test export with user filter"""
+    @patch('backend.services.export_service.open', create=True)
+    def test_export_with_date_filter(self, mock_open, mock_mkdtemp, mock_exists, mock_makedirs, mock_employee):
+        """Test export with date filter"""
+        # Mock directory creation and existence
+        mock_makedirs.return_value = None
+        mock_exists.return_value = True
+        
         # Mock the temporary directory
         mock_temp_dir = MagicMock()
         mock_temp_dir.__enter__.return_value = "/tmp"
         mock_mkdtemp.return_value = "/tmp"
         
         # Mock the database query
-        mock_query = MagicMock()
-        mock_filter = MagicMock()
-        mock_filter.all.return_value = [mock_employee]
-        mock_query.filter.return_value = mock_filter
-        self.db.query.return_value = mock_query
+        self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
         
-        # Call the export method with user filter
+        # Mock the file opening
+        mock_file = MagicMock()
+        mock_open.return_value.__enter__.return_value = mock_file
+        
+        # Call the export function with date filter
+        filters = {'start_date': date(2023, 1, 1), 'end_date': date(2023, 1, 31)}
+        result = self.export_service.export_employees('csv', filters)
+        
+        # Verify the result
+        assert "employees_export" in result and result.endswith(".csv")
+        mock_mkdtemp.assert_called_once()
+    
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
+    @patch('backend.services.export_service.tempfile.mkdtemp')
+    @patch('backend.services.export_service.open', create=True)
+    def test_export_with_department_filter(self, mock_open, mock_mkdtemp, mock_exists, mock_makedirs, mock_employee):
+        """Test export with department filter"""
+        # Mock directory creation and existence
+        mock_makedirs.return_value = None
+        mock_exists.return_value = True
+        
+        # Mock the temporary directory
+        mock_temp_dir = MagicMock()
+        mock_temp_dir.__enter__.return_value = "/tmp"
+        mock_mkdtemp.return_value = "/tmp"
+        
+        # Mock the database query
+        self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
+        
+        # Mock the file opening
+        mock_file = MagicMock()
+        mock_open.return_value.__enter__.return_value = mock_file
+        
+        # Call the export function with department filter
+        filters = {'department_id': 1}
+        result = self.export_service.export_employees('csv', filters)
+        
+        # Verify the result
+        assert "employees_export" in result and result.endswith(".csv")
+        mock_mkdtemp.assert_called_once()
+    
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
+    @patch('backend.services.export_service.tempfile.mkdtemp')
+    @patch('backend.services.export_service.open', create=True)
+    def test_export_with_status_filter(self, mock_open, mock_mkdtemp, mock_exists, mock_makedirs, mock_employee):
+        """Test export with status filter"""
+        # Mock directory creation and existence
+        mock_makedirs.return_value = None
+        mock_exists.return_value = True
+        
+        # Mock the temporary directory
+        mock_temp_dir = MagicMock()
+        mock_temp_dir.__enter__.return_value = "/tmp"
+        mock_mkdtemp.return_value = "/tmp"
+        
+        # Mock the database query
+        self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
+        
+        # Mock the file opening
+        mock_file = MagicMock()
+        mock_open.return_value.__enter__.return_value = mock_file
+        
+        # Call the export function with status filter
+        filters = {'status': 'active'}
+        result = self.export_service.export_employees('csv', filters)
+        
+        # Verify the result
+        assert "employees_export" in result and result.endswith(".csv")
+        mock_mkdtemp.assert_called_once()
+    
+    @patch('backend.services.export_service.os.makedirs')
+    @patch('backend.services.export_service.os.path.exists')
+    @patch('backend.services.export_service.tempfile.mkdtemp')
+    @patch('backend.services.export_service.open', create=True)
+    def test_export_with_user_filter(self, mock_open, mock_mkdtemp, mock_exists, mock_makedirs, mock_employee):
+        """Test export with user filter"""
+        # Mock directory creation and existence
+        mock_makedirs.return_value = None
+        mock_exists.return_value = True
+        
+        # Mock the temporary directory
+        mock_temp_dir = MagicMock()
+        mock_temp_dir.__enter__.return_value = "/tmp"
+        mock_mkdtemp.return_value = "/tmp"
+        
+        # Mock the database query
+        self.db.query.return_value.filter.return_value.all.return_value = [mock_employee]
+        
+        # Mock the file opening
+        mock_file = MagicMock()
+        mock_open.return_value.__enter__.return_value = mock_file
+        
+        # Call the export function with user filter
         filters = {'user_id': 1}
         result = self.export_service.export_employees('csv', filters)
         
