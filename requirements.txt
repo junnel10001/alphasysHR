@@ -1,4 +1,3 @@
-Flask==2.3.2
 SQLAlchemy==1.4.53
 # psycopg2-binary==2.9.9  # Disabled to avoid build issues on Windows
 PyMySQL==1.1.0
@@ -19,4 +18,5 @@ uvicorn
 loguru
 fastapi
 psutil
-streamlit
+requests
+schedule
