@@ -1,0 +1,285 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 20% 96%;
+    --foreground: 210 24% 8%;
+    --card: 0 0% 100%;
+    --card-foreground: 210 24% 8%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 210 24% 8%;
+    --primary: 217 91% 30%;
+    --primary-foreground: 210 40% 98%;
+    --primary-50: 217 91% 95%;
+    --primary-100: 217 91% 90%;
+    --primary-200: 217 91% 85%;
+    --primary-300: 217 91% 80%;
+    --primary-400: 217 91% 75%;
+    --primary-500: 217 91% 70%;
+    --primary-600: 217 91% 65%;
+    --primary-700: 217 91% 60%;
+    --primary-800: 217 91% 55%;
+    --primary-900: 217 91% 50%;
+    --secondary: 188 100% 39%;
+    --secondary-foreground: 210 40% 98%;
+    --secondary-50: 188 100% 95%;
+    --secondary-100: 188 100% 90%;
+    --secondary-200: 188 100% 85%;
+    --secondary-300: 188 100% 80%;
+    --secondary-400: 188 100% 75%;
+    --secondary-500: 188 100% 70%;
+    --secondary-600: 188 100% 65%;
+    --secondary-700: 188 100% 60%;
+    --secondary-800: 188 100% 55%;
+    --secondary-900: 188 100% 50%;
+    --muted: 210 40% 96%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 19 96% 54%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 217 91% 30%;
+    --alphasys: 217 91% 30%;
+    --alphasys-50: 217 91% 95%;
+    --alphasys-100: 217 91% 90%;
+    --alphasys-200: 217 91% 85%;
+    --alphasys-300: 217 91% 80%;
+    --alphasys-400: 217 91% 75%;
+    --alphasys-500: 217 91% 70%;
+    --alphasys-600: 217 91% 65%;
+    --alphasys-700: 217 91% 60%;
+    --alphasys-800: 217 91% 55%;
+    --alphasys-900: 217 91% 50%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217 91% 25%;
+    --primary-foreground: 210 40% 98%;
+    --primary-50: 217 91% 95%;
+    --primary-100: 217 91% 90%;
+    --primary-200: 217 91% 85%;
+    --primary-300: 217 91% 80%;
+    --primary-400: 217 91% 75%;
+    --primary-500: 217 91% 70%;
+    --primary-600: 217 91% 65%;
+    --primary-700: 217 91% 60%;
+    --primary-800: 217 91% 55%;
+    --primary-900: 217 91% 50%;
+    --secondary: 188 100% 29%;
+    --secondary-foreground: 210 40% 98%;
+    --secondary-50: 188 100% 95%;
+    --secondary-100: 188 100% 90%;
+    --secondary-200: 188 100% 85%;
+    --secondary-300: 188 100% 80%;
+    --secondary-400: 188 100% 75%;
+    --secondary-500: 188 100% 70%;
+    --secondary-600: 188 100% 65%;
+    --secondary-700: 188 100% 60%;
+    --secondary-800: 188 100% 55%;
+    --secondary-900: 188 100% 50%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 19 96% 44%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 224.3 76.3% 94.1%;
+    --alphasys: 217 91% 25%;
+    --alphasys-50: 217 91% 95%;
+    --alphasys-100: 217 91% 90%;
+    --alphasys-200: 217 91% 85%;
+    --alphasys-300: 217 91% 80%;
+    --alphasys-400: 217 91% 75%;
+    --alphasys-500: 217 91% 70%;
+    --alphasys-600: 217 91% 65%;
+    --alphasys-700: 217 91% 60%;
+    --alphasys-800: 217 91% 55%;
+    --alphasys-900: 217 91% 50%;
+  }
+  
+  /* Theme-specific utility classes */
+  @layer utilities {
+    /* AlphaSys brand color utilities */
+    .alphasys-bg {
+      background-color: hsl(var(--alphasys));
+    }
+    
+    .alphasys-text {
+      color: hsl(var(--alphasys));
+    }
+    
+    .alphasys-border {
+      border-color: hsl(var(--alphasys));
+    }
+    
+    /* Hover effects with transitions */
+    .alphasys-hover:hover {
+      background-color: hsl(var(--alphasys));
+      color: hsl(var(--alphasys-foreground));
+    }
+    
+    .alphasys-hover-text:hover {
+      color: hsl(var(--alphasys));
+    }
+    
+    .alphasys-hover-bg:hover {
+      background-color: hsl(var(--alphasys));
+    }
+    
+    /* Focus states */
+    .alphasys-focus:focus {
+      outline: 2px solid hsl(var(--alphasys));
+      outline-offset: 2px;
+    }
+    
+    /* Shadow utilities */
+    .alphasys-shadow {
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.5), 0 2px 4px -1px rgba(59, 130, 246, 0.3);
+    }
+    
+    .alphasys-shadow-lg {
+      box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.5), 0 4px 6px -2px rgba(59, 130, 246, 0.3);
+    }
+    
+    /* Gradient utilities */
+    .alphasys-gradient {
+      background: linear-gradient(135deg, hsl(var(--alphasys)) 0%, hsl(var(--alphasys-600)) 100%);
+    }
+    
+    .alphasys-gradient-text {
+      background: linear-gradient(135deg, hsl(var(--alphasys)) 0%, hsl(var(--alphasys-600)) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    
+    /* Animation utilities */
+    .alphasys-animate-pulse {
+      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    
+    .alphasys-animate-bounce {
+      animation: bounce 1s infinite;
+    }
+    
+    /* Transition utilities */
+    .alphasys-transition {
+      transition: all 0.2s ease-in-out;
+    }
+    
+    .alphasys-transition-colors {
+      transition-property: color, background-color, border-color;
+      transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+      transition-duration: 150ms;
+    }
+    
+    /* Badge utilities */
+    .alphasys-badge {
+      @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold transition-colors;
+      background-color: hsl(var(--alphasys));
+      color: hsl(var(--alphasys-foreground));
+    }
+    
+    /* Button utilities */
+    .alphasys-button {
+      @apply inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50;
+      background-color: hsl(var(--alphasys));
+      color: hsl(var(--alphasys-foreground));
+    }
+    
+    .alphasys-button:hover {
+      background-color: hsl(var(--alphasys-600));
+    }
+    
+    .alphasys-button:disabled {
+      background-color: hsl(var(--alphasys-200));
+      color: hsl(var(--alphasys-foreground));
+    }
+    
+    /* Card utilities */
+    .alphasys-card {
+      @apply rounded-lg border bg-card text-card-foreground shadow-sm;
+      border-color: hsl(var(--border));
+      background-color: hsl(var(--card));
+      color: hsl(var(--card-foreground));
+    }
+    
+    .alphasys-card-hover:hover {
+      border-color: hsl(var(--alphasys));
+      box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.1);
+    }
+  }
+  
+  /* Keyframe animations */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: .5;
+    }
+  }
+  
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(-25%);
+      animation-timing-function: cubic-bezier(0.8, 0, 1, 1);
+    }
+    50% {
+      transform: none;
+      animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+    }
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground font-sans;
+  }
+  
+  /* Typography System */
+  .font-kumbh-sans {
+    font-family: 'Kumbh Sans', system-ui, -apple-system, sans-serif;
+  }
+  
+  /* Font Size Classes */
+  .text-heading {
+    @apply text-4xl md:text-5xl font-bold tracking-tight;
+  }
+  
+  .text-subheading {
+    @apply text-2xl md:text-3xl font-semibold tracking-tight;
+  }
+  
+  .text-title {
+    @apply text-xl md:text-2xl font-semibold tracking-tight;
+  }
+  
+  .text-body {
+    @apply text-base md:text-lg leading-relaxed;
+  }
+  
+  .text-caption {
+    @apply text-sm text-muted-foreground leading-relaxed;
+  }
+  
+  .text-code {
+    @apply font-mono text-sm bg-muted px-2 py-1 rounded;
+  }
+}
