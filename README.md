@@ -726,7 +726,7 @@ This project is licensed under the MIT License - see [LICENSE.md](LICENSE.md) fo
 
 ## Changelog
 
-### Version 1.0.0
+### Version 0.0.1
 - Initial release of AlphaHR
 - Complete HR and payroll management system
 - Full API documentation
