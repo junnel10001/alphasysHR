@@ -1,50 +1,17 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
 import { AdminDashboard } from '@/components/AdminDashboard'
 import { EmployeeDashboard } from '@/components/EmployeeDashboard'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function DashboardPage() {
-  const { user, isLoading } = useAuth()
-  const router = useRouter()
-
-  useEffect(() => {
-    // Handle role-based redirection
-    if (!isLoading && user) {
-      if (user.role === 'admin') {
-        // User is admin, show admin dashboard
-        // No additional action needed - AdminDashboard will be rendered below
-      } else if (user.role === 'employee') {
-        // User is employee, show employee dashboard
-        // No additional action needed - EmployeeDashboard will be rendered below
-      } else {
-        // Unknown role, redirect to home
-        router.push('/')
-      }
-    }
-  }, [user, isLoading, router])
-
-  // Handle loading state
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
-      </div>
-    )
-  }
-
-  // Handle no user (shouldn't happen due to ProtectedRoute, but just in case)
-  if (!user) {
-    router.push('/login')
-    return null
-  }
+  const { user } = useAuth()
 
   // Render appropriate dashboard based on role
-  if (user.role === 'admin') {
+  // Only admin and super_admin get AdminDashboard, all others get EmployeeDashboard
+  if (user?.role === 'admin' || user?.role === 'super_admin') {
     return <AdminDashboard />
-  } else if (user.role === 'employee') {
+  } else if (user?.role) {
     return <EmployeeDashboard />
   } else {
     // Unknown role, show error

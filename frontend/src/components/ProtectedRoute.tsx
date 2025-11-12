@@ -11,6 +11,7 @@ interface ProtectedRouteProps {
 
 // Role hierarchy for hierarchical permission checking
 const ROLE_HIERARCHY: { [key: string]: number } = {
+  'super_admin': 5,  // Highest level
   'admin': 4,
   'manager': 3,
   'employee': 2,
@@ -21,6 +22,7 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   const { user, isLoading } = useAuth()
   const router = useRouter()
   const [isAuthorized, setIsAuthorized] = useState(false)
+  const [isClient, setIsClient] = useState(false)
 
   const hasRequiredRole = (userRole: string, requiredRole: string): boolean => {
     if (!requiredRole) return true // No role requirement means access is granted
@@ -37,31 +39,36 @@ export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) 
   }
 
   useEffect(() => {
+    setIsClient(true)
+    
     // Only run on client side
-    if (typeof window !== 'undefined') {
-      if (!isLoading) {
-        if (!user) {
+    if (!isLoading) {
+      if (!user) {
+        // Check if there's a token in localStorage before redirecting to login
+        const hasToken = localStorage.getItem('token')
+        if (!hasToken) {
           router.push('/login')
           return
-        }
-        
-        if (requiredRole && !hasRequiredRole(user.role, requiredRole)) {
-          router.push('/')
+        } else {
+          // Token exists but user is null, this might be a temporary state
+          // Try to refresh the user state
           return
         }
-        
-        setIsAuthorized(true)
       }
+      
+      if (requiredRole && !hasRequiredRole(user.role, requiredRole)) {
+        router.push('/')
+        return
+      }
+      
+      setIsAuthorized(true)
     }
    // return () => {}
   }, [user, isLoading, requiredRole, router])
 
-  // Handle server-side rendering
-  if (typeof window === 'undefined') {
-    return null
-  }
-
-  if (isLoading) {
+  // Show loading spinner during initial load (both server and client)
+  // This ensures consistent rendering between server and client
+  if (isLoading || !isClient) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>

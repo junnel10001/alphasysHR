@@ -374,6 +374,7 @@ class RBACUtils:
             ("manage_roles", "Manage system roles"),
             ("manage_users", "Manage system users"),
             ("admin_access", "Full administrative access"),
+            ("system_config", "Access system configuration and settings"),
             ("export_data", "Export HR data in various formats"),
             ("download_files", "Download exported files"),
             ("view_files", "View exported files in browser"),
@@ -386,6 +387,10 @@ class RBACUtils:
             ("view_departments", "View department information"),
             ("manage_departments", "Manage department records"),
             ("view_roles", "View role information"),
+            ("view_positions", "View position information"),
+            ("manage_positions", "Manage position records"),
+            ("view_leave_types", "View leave type information"),
+            ("manage_leave_types", "Manage leave type records"),
         ]
         
         created_permissions = []
@@ -411,6 +416,11 @@ class RBACUtils:
         admin_role = None
         manager_role = None
         employee_role = None
+        super_admin_role = None
+        
+        # Super Admin role
+        if not db.query(Role).filter(Role.role_name == "super_admin").first():
+            super_admin_role = RBACUtils.create_role(db, "super_admin", "Super administrator with full system access")
         
         # Admin role
         if not db.query(Role).filter(Role.role_name == "admin").first():
@@ -425,11 +435,13 @@ class RBACUtils:
             employee_role = RBACUtils.create_role(db, "employee", "Regular employee with basic access")
         
         created_roles = []
-        for role in [admin_role, manager_role, employee_role]:
+        for role in [super_admin_role, admin_role, manager_role, employee_role]:
             if role:
                 created_roles.append(role)
         
         # Assign permissions to roles
+        super_admin_permissions = db.query(Permission).all()  # Super admin gets ALL permissions
+        
         admin_permissions = db.query(Permission).filter(
             Permission.permission_name.in_([
                 "admin_access", "manage_permissions", "manage_roles", "manage_users",
@@ -439,7 +451,9 @@ class RBACUtils:
                 "create_payroll", "read_payroll", "update_payroll", "delete_payroll",
                 "export_data", "download_files", "view_files", "employee_export",
                 "payroll_export", "overtime_export", "activity_export", "cleanup_exports",
-                "employee_access", "admin_access", "view_departments", "manage_departments", "view_roles"  # Ensure admin role has admin_access permission
+                "employee_access", "admin_access", "view_departments", "manage_departments", "view_roles",
+                "view_leave_types", "manage_leave_types",
+                "view_positions", "manage_positions"
             ])
         ).all()
         
@@ -450,16 +464,22 @@ class RBACUtils:
                 "create_leave", "read_leave", "update_leave", "delete_leave",
                 "create_payroll", "read_payroll", "update_payroll", "delete_payroll",
                 "export_data", "download_files", "view_files", "employee_export",
-                "payroll_export", "overtime_export", "activity_export", "view_departments", "view_roles"
+                "payroll_export", "overtime_export", "activity_export", "view_departments", "view_roles",
+                "view_leave_types"
             ])
         ).all()
         
         employee_permissions = db.query(Permission).filter(
             Permission.permission_name.in_([
                 "read_employee", "read_attendance", "read_leave", "read_payroll",
-                "view_files", "employee_access", "view_roles", "view_departments"
+                "view_files", "employee_access", "view_roles", "view_departments", "view_leave_types"
             ])
         ).all()
+        
+        # Assign permissions to super admin role
+        if super_admin_role:
+            for permission in super_admin_permissions:
+                RBACUtils.assign_permission_to_role(db, super_admin_role.role_id, permission.permission_id)
         
         # Assign permissions to admin role
         if admin_role:

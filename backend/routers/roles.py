@@ -126,6 +126,16 @@ def update_role(role_id: int, role_update: RoleUpdate, db: Session = Depends(get
     
     # Update fields if provided
     update_data = role_update.model_dump(exclude_unset=True)
+    
+    # Check for duplicate role name if role_name is being updated
+    if 'role_name' in update_data:
+        existing = db.query(Role).filter(
+            Role.role_name == update_data['role_name'],
+            Role.role_id != role_id
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Role with this name already exists")
+    
     for attr, value in update_data.items():
         setattr(role, attr, value)
     
@@ -152,6 +162,10 @@ def delete_role(role_id: int, db: Session = Depends(get_db), user: User = Depend
     role = db.query(Role).filter(Role.role_id == role_id).first()
     if not role:
         raise HTTPException(status_code=404, detail="Role not found")
+    
+    # Protect super_admin and admin roles from deletion
+    if role.role_name in ['super_admin', 'admin']:
+        raise HTTPException(status_code=403, detail=f"Cannot delete system role: {role.role_name}")
     
     # Check if any users are assigned to this role
     users_with_role = db.query(User).filter(User.role_id == role_id).count()

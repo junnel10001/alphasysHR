@@ -1,0 +1,94 @@
+{
+  "summary": {
+    "total_tests": 14,
+    "passed": 12,
+    "failed": 2,
+    "success_rate": 85.71428571428571
+  },
+  "results": [
+    {
+      "test": "Admin Login",
+      "status": "PASS",
+      "details": "Token acquired successfully",
+      "timestamp": "2025-11-12T07:18:00.941926"
+    },
+    {
+      "test": "List Users",
+      "status": "PASS",
+      "details": "Retrieved 17 users",
+      "timestamp": "2025-11-12T07:18:03.057543"
+    },
+    {
+      "test": "User Data Structure",
+      "status": "PASS",
+      "details": "All required fields present",
+      "timestamp": "2025-11-12T07:18:03.057543"
+    },
+    {
+      "test": "Roles Summary",
+      "status": "PASS",
+      "details": "Retrieved 5 roles",
+      "timestamp": "2025-11-12T07:18:05.161948"
+    },
+    {
+      "test": "Role Data Structure",
+      "status": "PASS",
+      "details": "All required fields present",
+      "timestamp": "2025-11-12T07:18:05.161948"
+    },
+    {
+      "test": "User Search",
+      "status": "PASS",
+      "details": "Search returned 2 matching users",
+      "timestamp": "2025-11-12T07:18:07.236772"
+    },
+    {
+      "test": "Status Filter",
+      "status": "PASS",
+      "details": "Active filter returned 17 users",
+      "timestamp": "2025-11-12T07:18:09.335435"
+    },
+    {
+      "test": "Role Filter",
+      "status": "PASS",
+      "details": "Employee filter returned 14 users",
+      "timestamp": "2025-11-12T07:18:11.443611"
+    },
+    {
+      "test": "Role Assignment",
+      "status": "PASS",
+      "details": "Assigned manager role to user 4",
+      "timestamp": "2025-11-12T07:18:15.634711"
+    },
+    {
+      "test": "Role Assignment Verification",
+      "status": "FAIL",
+      "details": "Role change not reflected",
+      "timestamp": "2025-11-12T07:18:17.729171"
+    },
+    {
+      "test": "User Deactivation",
+      "status": "PASS",
+      "details": "Deactivated user 4",
+      "timestamp": "2025-11-12T07:18:23.981405"
+    },
+    {
+      "test": "Deactivation Verification",
+      "status": "PASS",
+      "details": "User status changed to inactive",
+      "timestamp": "2025-11-12T07:18:26.079872"
+    },
+    {
+      "test": "User Reactivation",
+      "status": "PASS",
+      "details": "Reactivated user 4",
+      "timestamp": "2025-11-12T07:18:28.153139"
+    },
+    {
+      "test": "Unauthorized Access",
+      "status": "FAIL",
+      "details": "Expected 401, got 403",
+      "timestamp": "2025-11-12T07:18:30.204949"
+    }
+  ]
+}

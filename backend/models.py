@@ -30,8 +30,6 @@ class User(Base):
     department_id = Column(Integer, ForeignKey("departments.department_id"))
     role_id = Column(Integer, ForeignKey("roles.role_id"))
     role_name = Column(String(50), default="employee")  # role name for JWT
-    hourly_rate = Column(Numeric(10, 2), nullable=False)
-    date_hired = Column(Date, nullable=False)
     status = Column(String(20), default=UserStatus.active.value)
 
     department = relationship("Department", back_populates="users")
@@ -56,6 +54,7 @@ class User(Base):
         foreign_keys="[OvertimeRequest.user_id]",
     )
     invitations_sent = relationship("UserInvitation", back_populates="invited_by_user", foreign_keys="[UserInvitation.invited_by]")
+    employee_profile = relationship("Employee", back_populates="user")
 
 class Role(Base):
     __tablename__ = "roles"
@@ -169,6 +168,7 @@ class LeaveType(Base):
 
     leave_type_id = Column(Integer, primary_key=True, index=True)
     leave_name = Column(String(50), unique=True, nullable=False)
+    description = Column(Text)
     default_allocation = Column(Integer, nullable=False)
 
 class LeaveStatus(str, enum.Enum):
@@ -250,6 +250,7 @@ class Employee(Base):
 
     employee_id = Column(Integer, primary_key=True, index=True)
     company_id = Column(String(50), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.user_id"), nullable=True, index=True)
 
     first_name = Column(String(100), nullable=False)
     middle_name = Column(String(100), nullable=True)
@@ -280,7 +281,7 @@ class Employee(Base):
     department_id = Column(Integer, ForeignKey("departments.department_id"), nullable=True)
     role_id = Column(Integer, ForeignKey("roles.role_id"), nullable=True)
     office_id = Column(Integer, ForeignKey("offices.office_id"), nullable=True)
-    line_manager_id = Column(Integer, ForeignKey("users.user_id"), nullable=True)
+    line_manager_id = Column(Integer, nullable=True)  # Remove foreign key for now
 
     employment_status = Column(String(20), nullable=True)
     date_hired = Column(Date, nullable=True)
@@ -304,10 +305,10 @@ class Employee(Base):
     department = relationship("Department", back_populates="employees")
     role = relationship("Role", back_populates="employees")
     office = relationship("Office", back_populates="employees")
-    line_manager = relationship("User", foreign_keys=[line_manager_id])
+    # line_manager = relationship("User", foreign_keys=[line_manager_id])  # Commented out for now
     
-    # Optional: link to user if needed
-    # user = relationship("User", back_populates="employee_profile")
+    # Link to user account
+    user = relationship("User", back_populates="employee_profile")
 
 # ----------------------------------------------------------------------
 # UserInvitation model
@@ -343,3 +344,30 @@ class UserInvitation(Base):
         """Generate a secure random token for invitation"""
         alphabet = string.ascii_letters + string.digits
         return ''.join(secrets.choice(alphabet) for _ in range(64))
+
+# ----------------------------------------------------------------------
+# Position and Employment Status models
+# ----------------------------------------------------------------------
+class Position(Base):
+    __tablename__ = "positions"
+
+    position_id = Column(Integer, primary_key=True, index=True)
+    position_name = Column(String(100), unique=True, nullable=False)
+    description = Column(Text)
+    department_id = Column(Integer, ForeignKey("departments.department_id"), nullable=True)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())
+    
+    # Relationships
+    department = relationship("Department")
+
+
+class EmploymentStatus(Base):
+    __tablename__ = "employment_statuses"
+
+    employment_status_id = Column(Integer, primary_key=True, index=True)
+    status_name = Column(String(50), unique=True, nullable=False)
+    description = Column(Text)
+    is_active = Column(Boolean, default=True)
+    created_at = Column(TIMESTAMP, server_default=func.now())
+    updated_at = Column(TIMESTAMP, server_default=func.now(), onupdate=func.now())

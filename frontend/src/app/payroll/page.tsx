@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { LayoutWrapper } from '@/components/layout'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { Button } from '@/components/ui/button'
+import { payrollService } from '@/lib/api'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import {
@@ -57,78 +58,23 @@ export default function PayrollPage() {
   const fetchPayrollRecords = async () => {
     try {
       setIsLoading(true)
-      // Mock data for demonstration
-      const mockRecords: PayrollRecord[] = [
-        {
-          id: 1,
-          employee_id: 1,
-          employee_name: 'John Admin',
-          pay_period: 'January 2025',
-          basic_salary: 35000,
-          overtime_pay: 5000,
-          allowances: 2000,
-          deductions: 3000,
-          net_salary: 39000,
-          status: 'Processed',
-          pay_date: '2025-01-31',
-          payslip_url: '/payslip/1'
-        },
-        {
-          id: 2,
-          employee_id: 2,
-          employee_name: 'Jane Doe',
-          pay_period: 'January 2025',
-          basic_salary: 32000,
-          overtime_pay: 3000,
-          allowances: 1500,
-          deductions: 2500,
-          net_salary: 34000,
-          status: 'Processed',
-          pay_date: '2025-01-31',
-          payslip_url: '/payslip/2'
-        },
-        {
-          id: 3,
-          employee_id: 3,
-          employee_name: 'Bob Smith',
-          pay_period: 'January 2025',
-          basic_salary: 28000,
-          overtime_pay: 2000,
-          allowances: 1000,
-          deductions: 2000,
-          net_salary: 29000,
-          status: 'Pending',
-          pay_date: '2025-02-28'
-        },
-        {
-          id: 4,
-          employee_id: 4,
-          employee_name: 'Alice Johnson',
-          pay_period: 'December 2024',
-          basic_salary: 30000,
-          overtime_pay: 4000,
-          allowances: 1800,
-          deductions: 2800,
-          net_salary: 33000,
-          status: 'Processed',
-          pay_date: '2024-12-31',
-          payslip_url: '/payslip/3'
-        },
-        {
-          id: 5,
-          employee_id: 5,
-          employee_name: 'Mike Wilson',
-          pay_period: 'February 2025',
-          basic_salary: 26000,
-          overtime_pay: 1500,
-          allowances: 1200,
-          deductions: 2300,
-          net_salary: 26400,
-          status: 'Failed',
-          pay_date: '2025-02-28'
-        }
-      ]
-      setPayrollRecords(mockRecords)
+      const response = await payrollService.getPayrolls()
+      // Transform the data to match frontend interface
+      const records = (response.data || response).map((record: any) => ({
+        id: record.payroll_id,
+        employee_id: record.user_id,
+        employee_name: `${record.user?.first_name || ''} ${record.user?.last_name || ''}`,
+        pay_period: `${format(new Date(record.cutoff_start), 'MMM yyyy')} - ${format(new Date(record.cutoff_end), 'MMM yyyy')}`,
+        basic_salary: record.basic_pay,
+        overtime_pay: record.overtime_pay,
+        allowances: 0, // Not in current model, set to 0
+        deductions: record.deductions,
+        net_salary: record.net_pay,
+        status: record.generated_at ? 'Processed' : 'Pending',
+        pay_date: format(new Date(record.generated_at), 'yyyy-MM-dd'),
+        payslip_url: record.payslip_id ? `/payslip/${record.payslip_id}` : undefined
+      }))
+      setPayrollRecords(records)
     } catch (error) {
       console.error('Error fetching payroll records:', error)
     } finally {

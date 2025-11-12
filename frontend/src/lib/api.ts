@@ -109,6 +109,11 @@ export const employeeService = {
     return response.data
   },
 
+  async getEmployeeByUserId(id: number) {
+    const response = await api.get(`/employees/by-user/${id}`)
+    return response.data
+  },
+
   async createEmployee(data: any) {
     const response = await api.post('/employees/', data)
     return response.data
@@ -150,11 +155,31 @@ export const departmentService = {
     const response = await api.delete(`/departments/${id}`)
     return response.data
   },
+
+  async getOffices(params?: any) {
+    const response = await api.get('/lookup/offices', { params })
+    return response.data
+  },
+
+  async createOffice(data: any) {
+    const response = await api.post('/offices/', data)
+    return response.data
+  },
+
+  async updateOffice(id: number, data: any) {
+    const response = await api.put(`/offices/${id}`, data)
+    return response.data
+  },
+
+  async deleteOffice(id: number) {
+    const response = await api.delete(`/offices/${id}`)
+    return response.data
+  },
 }
 
 export const roleService = {
   async getRoles(params?: any) {
-    const response = await api.get('/lookup/roles', { params })
+    const response = await api.get('/roles/', { params })
     return response.data
   },
 
@@ -177,6 +202,23 @@ export const roleService = {
     const response = await api.delete(`/roles/${id}`)
     return response.data
   },
+
+  async assignPermissionsToRole(roleId: number, permissionIds: number[]) {
+    const response = await api.post(`/roles/${roleId}/permissions`, { permission_ids: permissionIds })
+    return response.data
+  },
+
+  async getRolePermissions(roleId: number) {
+    const response = await api.get(`/roles/${roleId}/permissions`)
+    return response.data
+  }
+}
+
+export const permissionService = {
+  async getPermissions(params?: any) {
+    const response = await api.get('/permissions/', { params })
+    return response.data
+  }
 }
 
 export const attendanceService = {
@@ -478,6 +520,137 @@ export const invitationService = {
     const response = await api.get('/invitations/my-invitations', { params })
     return response.data
   },
+}
+
+export const leaveTypesService = {
+  async getLeaveTypes(params?: any) {
+    const response = await api.get('/leave-types/', { params })
+    return response.data
+  },
+
+  async getLeaveType(id: number) {
+    const response = await api.get(`/leave-types/${id}`)
+    return response.data
+  },
+
+  async createLeaveType(data: any) {
+    const response = await api.post('/leave-types/', data)
+    return response.data
+  },
+
+  async updateLeaveType(id: number, data: any) {
+    const response = await api.put(`/leave-types/${id}`, data)
+    return response.data
+  },
+
+  async deleteLeaveType(id: number) {
+    const response = await api.delete(`/leave-types/${id}`)
+    return response.data
+  },
+}
+
+export const positionsService = {
+  async getPositions(params?: any) {
+    const response = await api.get('/positions/', { params })
+    return response.data
+  },
+
+  async getPosition(id: number) {
+    const response = await api.get(`/positions/${id}`)
+    return response.data
+  },
+
+  async createPosition(data: any) {
+    const response = await api.post('/positions/', data)
+    return response.data
+  },
+
+  async updatePosition(id: number, data: any) {
+    const response = await api.put(`/positions/${id}`, data)
+    return response.data
+  },
+
+  async deletePosition(id: number) {
+    const response = await api.delete(`/positions/${id}`)
+    return response.data
+  },
+}
+
+export const employmentStatusesService = {
+  async getEmploymentStatuses(params?: any) {
+    const response = await api.get('/employment-statuses/', { params })
+    return response.data
+  },
+
+  async getEmploymentStatus(id: number) {
+    const response = await api.get(`/employment-statuses/${id}`)
+    return response.data
+  },
+
+  async createEmploymentStatus(data: any) {
+    const response = await api.post('/employment-statuses/', data)
+    return response.data
+  },
+
+  async updateEmploymentStatus(id: number, data: any) {
+    const response = await api.put(`/employment-statuses/${id}`, data)
+    return response.data
+  },
+
+  async deleteEmploymentStatus(id: number) {
+    const response = await api.delete(`/employment-statuses/${id}`)
+    return response.data
+  },
+}
+
+export const systemStatusService = {
+  async getSystemInfo() {
+    const response = await api.get('/system-status/info')
+    return response.data
+  },
+
+  async getHealthCheck() {
+    const response = await api.get('/system-status/health')
+    return response.data
+  },
+
+  async getSystemMetrics() {
+    const response = await api.get('/system-status/metrics')
+    return response.data
+  }
+}
+
+// User Management API
+export const userManagementService = {
+  async listUsers(params?: any) {
+    const response = await api.get('/user-management/users', { params })
+    return response.data
+  },
+
+  async getUserRoles(userId: number) {
+    const response = await api.get(`/user-management/users/${userId}/roles`)
+    return response.data
+  },
+
+  async assignUserRoles(assignment: { user_id: number; role_ids: number[] }) {
+    const response = await api.post('/user-management/users/assign-roles', assignment)
+    return response.data
+  },
+
+  async deactivateUser(data: { user_id: number; reason: string }) {
+    const response = await api.post('/user-management/users/deactivate', data)
+    return response.data
+  },
+
+  async activateUser(userId: number) {
+    const response = await api.post(`/user-management/users/${userId}/activate`)
+    return response.data
+  },
+
+  async getRolesSummary() {
+    const response = await api.get('/user-management/roles/summary')
+    return response.data
+  }
 }
 
 export default api

@@ -23,9 +23,12 @@ export default function LoginPage() {
     setError('')
 
     try {
+      // Wait for login to complete and user data to be set
       await login(username, password)
-      // Use router.push for proper navigation
-      router.push('/')
+      // Use router.push for proper navigation with a slight delay to ensure state is updated
+      setTimeout(() => {
+        router.push('/')
+      }, 100)
     } catch (err) {
       setError('Invalid username or password')
     } finally {

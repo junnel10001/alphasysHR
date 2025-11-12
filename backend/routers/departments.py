@@ -37,10 +37,9 @@ class DepartmentOut(BaseModel):
 
 
 @router.post("/", response_model=DepartmentOut, status_code=status.HTTP_201_CREATED)
-@has_permission("manage_departments")
 def create_department(
-    department: DepartmentCreate, 
-    db: Session = Depends(get_db), 
+    department: DepartmentCreate,
+    db: Session = Depends(get_db),
     user = Depends(PermissionChecker.require_permission("manage_departments"))
 ):
     """
@@ -61,11 +60,10 @@ def create_department(
 
 
 @router.get("/", response_model=List[DepartmentOut])
-@has_permission("view_departments")
 def list_departments(
-    skip: int = 0, 
-    limit: int = 100, 
-    db: Session = Depends(get_db), 
+    skip: int = 0,
+    limit: int = 100,
+    db: Session = Depends(get_db),
     user = Depends(PermissionChecker.require_permission("view_departments"))
 ):
     """
@@ -76,10 +74,9 @@ def list_departments(
 
 
 @router.get("/{department_id}", response_model=DepartmentOut)
-@has_permission("view_departments")
 def get_department(
-    department_id: int, 
-    db: Session = Depends(get_db), 
+    department_id: int,
+    db: Session = Depends(get_db),
     user = Depends(PermissionChecker.require_permission("view_departments"))
 ):
     """
@@ -92,11 +89,10 @@ def get_department(
 
 
 @router.put("/{department_id}", response_model=DepartmentOut)
-@has_permission("manage_departments")
 def update_department(
-    department_id: int, 
-    department_update: DepartmentUpdate, 
-    db: Session = Depends(get_db), 
+    department_id: int,
+    department_update: DepartmentUpdate,
+    db: Session = Depends(get_db),
     user = Depends(PermissionChecker.require_permission("manage_departments"))
 ):
     """
@@ -108,19 +104,48 @@ def update_department(
     
     # Update fields if provided
     update_data = department_update.model_dump(exclude_unset=True)
+    
+    # Check if department name is being updated and if it conflicts with existing department
+    if 'department_name' in update_data:
+        new_name = update_data['department_name']
+        # Check if another department with this name already exists (excluding current department)
+        existing = db.query(Department).filter(
+            Department.department_name == new_name,
+            Department.department_id != department_id
+        ).first()
+        if existing:
+            raise HTTPException(
+                status_code=400,
+                detail="Department with this name already exists"
+            )
+    
+    # Apply updates
     for attr, value in update_data.items():
         setattr(department, attr, value)
     
-    db.commit()
-    db.refresh(department)
-    return department
+    try:
+        db.commit()
+        db.refresh(department)
+        return department
+    except Exception as e:
+        db.rollback()
+        # Handle any database constraint violations
+        if "unique constraint" in str(e).lower():
+            raise HTTPException(
+                status_code=400,
+                detail="Department with this name already exists"
+            )
+        else:
+            raise HTTPException(
+                status_code=500,
+                detail="An error occurred while updating the department"
+            )
 
 
 @router.delete("/{department_id}", status_code=status.HTTP_204_NO_CONTENT)
-@has_permission("manage_departments")
 def delete_department(
-    department_id: int, 
-    db: Session = Depends(get_db), 
+    department_id: int,
+    db: Session = Depends(get_db),
     user = Depends(PermissionChecker.require_permission("manage_departments"))
 ):
     """

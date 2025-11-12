@@ -44,7 +44,7 @@ async def lifespan(app: FastAPI):
     seed_offices()
     yield
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(lifespan=lifespan, debug=True)
 
 # ------------------------------------------------------------------
 # CORS configuration (allow any origin for development)
@@ -74,6 +74,12 @@ from backend.routers import (
     lookup,
     departments,
     invitations,
+    positions,
+    employment_statuses,
+    system_status,
+    user_management,
+    offices,
+    leave_types,
 )
 
 # Include all routers, including dashboard, after the app is defined.
@@ -90,6 +96,12 @@ app.include_router(export.router)
 app.include_router(lookup.router)
 app.include_router(departments.router)
 app.include_router(invitations.router)
+app.include_router(positions.router)
+app.include_router(employment_statuses.router)
+app.include_router(system_status.router)
+app.include_router(user_management.router)
+app.include_router(offices.router)
+app.include_router(leave_types.router)
 
 # ------------------------------------------------------------------
 # Pydantic Schemas
@@ -207,14 +219,16 @@ def create_user_endpoint(user: UserCreate, db: Session = Depends(get_db)):
 
 
 @app.get("/users/me")
-def read_current_user(current_user: User = Depends(get_current_user)):
+def read_current_user(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    from backend.utils.rbac import RBACUtils
+    permissions = RBACUtils.get_user_permission_names(current_user, db)
     return {
         "id": current_user.user_id,
         "username": current_user.username,
         "email": current_user.email,
         "full_name": f"{current_user.first_name} {current_user.last_name}",
         "role": current_user.role_name,
-        "permissions": [],  # Populated by RBAC middleware
+        "permissions": permissions,
     }
 
 

@@ -56,7 +56,7 @@ def run_seeds():
 
         # New seed data for dashboard visualizations
         # Seed office locations
-        seed_offices(db)
+        seed_offices()
         seed_late_arrivals(db)
         seed_sick_leave(db)
         seed_overtime_stats(db)

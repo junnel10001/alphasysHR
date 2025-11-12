@@ -66,6 +66,12 @@ const navigation = [
       { name: 'Export', href: '/export', icon: Download },
     ],
   },
+  {
+    title: 'System Administration',
+    items: [
+      { name: 'System Configuration', href: '/system-config', icon: Settings },
+    ],
+  },
 ]
 
 export function Layout({ children }: LayoutProps) {

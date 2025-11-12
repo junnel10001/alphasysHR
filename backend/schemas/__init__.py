@@ -19,6 +19,22 @@ class OfficeSchema(BaseModel):
     office_name: str
     location: str | None = None
 
+class PositionSchema(BaseModel):
+    position_id: int
+    position_name: str
+    description: str | None = None
+    department_id: int | None = None
+    created_at: str | None = None
+    updated_at: str | None = None
+
+class EmploymentStatusSchema(BaseModel):
+    employment_status_id: int
+    status_name: str
+    description: str | None = None
+    is_active: bool = True
+    created_at: str | None = None
+    updated_at: str | None = None
+
     class Config:
         from_attributes = True
 

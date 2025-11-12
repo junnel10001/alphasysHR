@@ -29,31 +29,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [token, setToken] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
+    setIsClient(true)
+    
     // Only run on client side
-    if (typeof window !== 'undefined') {
-      const storedToken = localStorage.getItem('token')
-      if (storedToken) {
-        setToken(storedToken)
-        // Try to get current user
-        authService.getCurrentUser()
-          .then((userData) => {
-            setUser(userData)
-          })
-          .catch(() => {
-            // Token is invalid, remove it
-            localStorage.removeItem('token')
-            setToken(null)
-          })
-          .finally(() => {
-            setIsLoading(false)
-          })
-      } else {
-        setIsLoading(false)
-      }
+    const storedToken = localStorage.getItem('token')
+    if (storedToken) {
+      setToken(storedToken)
+      // Try to get current user and permissions
+      Promise.all([
+        authService.getCurrentUser(),
+        authService.getPermissions()
+      ])
+        .then(([userData, permissionsData]) => {
+          // Combine user data with permissions
+          const userWithPermissions = {
+            ...userData,
+            permissions: Array.isArray(permissionsData) ? permissionsData : permissionsData.permissions || []
+          }
+          setUser(userWithPermissions)
+        })
+        .catch((error) => {
+          console.error('Error validating token:', error)
+          // Token is invalid, remove it
+          localStorage.removeItem('token')
+          setToken(null)
+          setUser(null)
+        })
+        .finally(() => {
+          setIsLoading(false)
+        })
     } else {
-      // On server side, set loading to false
       setIsLoading(false)
     }
     //return () => {}
@@ -68,10 +76,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('token', token)
       setToken(token)
       
-      // Get user info with error handling
+      // Get user info and permissions with error handling
       try {
-        const userData = await authService.getCurrentUser()
-        setUser(userData)
+        const [userData, permissionsData] = await Promise.all([
+          authService.getCurrentUser(),
+          authService.getPermissions()
+        ])
+        // Combine user data with permissions
+        const userWithPermissions = {
+          ...userData,
+          permissions: Array.isArray(permissionsData) ? permissionsData : permissionsData.permissions || []
+        }
+        setUser(userWithPermissions)
+        // Ensure user state is set before returning
+        return userWithPermissions
       } catch (userError) {
         console.error('Failed to load user data:', userError)
         // If we can't get user info, clear everything and throw

@@ -18,6 +18,53 @@ def list_employees(skip: int = 0, limit: int = 100, db: Session = Depends(get_db
     return employees
 
 
+@router.get("/by-user/{user_id}")
+def get_employee_by_user_id(user_id: int, db: Session = Depends(get_db)):
+    """
+    Get employee information by user_id.
+    This endpoint is used when you have a user_id and need to find the corresponding employee record.
+    Returns 200 status with either the employee data or a response indicating no employee found.
+    """
+    employee = db.query(Employee).options(
+        joinedload(Employee.department),
+        joinedload(Employee.role)
+    ).filter(Employee.user_id == user_id).first()
+    
+    if not employee:
+        return {
+            "employee_found": False,
+            "message": "No employee profile found for this user. The user account exists but hasn't been linked to an employee record yet.",
+            "user_id": user_id
+        }
+    
+    # Convert employee to dict and add the employee_found flag
+    employee_data = {
+        "employee_found": True,
+        "employee_id": employee.employee_id,
+        "user_id": employee.user_id,
+        "company_id": employee.company_id,
+        "first_name": employee.first_name,
+        "last_name": employee.last_name,
+        "email": employee.personal_email,  # Use personal_email field
+        "mobile_number": employee.mobile_number,
+        "current_address": employee.current_address,
+        "date_hired": employee.date_hired.isoformat() if employee.date_hired else None,
+        "employment_status": employee.employment_status,
+        "basic_salary": float(employee.basic_salary) if employee.basic_salary else None,
+        "department": {
+            "department_id": employee.department.department_id,
+            "department_name": employee.department.department_name
+        } if employee.department else None,
+        "role": {
+            "role_id": employee.role.role_id,
+            "role_name": employee.role.role_name,
+            "description": employee.role.description
+        } if employee.role else None
+    }
+    
+    return employee_data
+
+
 @router.get("/{employee_id}", response_model=EmployeeOut)
 def get_employee(employee_id: int, db: Session = Depends(get_db)):
     employee = db.query(Employee).options(

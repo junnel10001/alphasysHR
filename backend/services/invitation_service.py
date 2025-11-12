@@ -336,8 +336,6 @@ class InvitationService:
                 role_id=invitation.role_id,
                 role_name=invitation.role.role_name,
                 department_id=invitation.department_id,
-                hourly_rate=0.0,  # Default value, can be updated later
-                date_hired=datetime.utcnow().date(),
                 status=UserStatus.active.value
             )
             
@@ -347,6 +345,15 @@ class InvitationService:
             # Update invitation status
             invitation.status = InvitationStatus.accepted.value
             invitation.accepted_at = datetime.utcnow()
+            
+            # If invitation is linked to an employee profile, update the user_id
+            if invitation.employee_profile_id:
+                employee = self.db.query(Employee).filter(
+                    Employee.employee_id == invitation.employee_profile_id
+                ).first()
+                if employee:
+                    employee.user_id = new_user.user_id
+                    logger.info(f"Updated employee {employee.employee_id} with user_id {new_user.user_id}")
             
             self.db.commit()
             

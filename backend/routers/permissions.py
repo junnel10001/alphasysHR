@@ -64,8 +64,8 @@ def create_permission(permission: PermissionCreate, db: Session = Depends(get_db
 
 
 @router.get("/", response_model=List[PermissionOut])
-@has_permission("manage_permissions")
-def list_permissions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), user: User = Depends(PermissionChecker.require_permission("manage_permissions"))):
+@has_permission("view_roles")
+def list_permissions(skip: int = 0, limit: int = 100, db: Session = Depends(get_db), user: User = Depends(PermissionChecker.require_permission("view_roles"))):
     """
     Retrieve a paginated list of permissions.
     """

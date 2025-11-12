@@ -90,7 +90,7 @@ def has_permission(permission_name: str):
     """
     def permission_checker(func: Callable) -> Callable:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):
             # Get current user from kwargs (assuming it's passed as user parameter)
             user = kwargs.get('user') or kwargs.get('current_user')
             if not user:
@@ -114,7 +114,7 @@ def has_permission(permission_name: str):
                     detail=f"Permission '{permission_name}' required"
                 )
             
-            return await func(*args, **kwargs)
+            return func(*args, **kwargs)
         return wrapper
     return permission_checker
 
@@ -131,7 +131,7 @@ def has_role(role_name: str):
     """
     def role_checker(func: Callable) -> Callable:
         @wraps(func)
-        async def wrapper(*args, **kwargs):
+        def wrapper(*args, **kwargs):
             # Get current user from kwargs (assuming it's passed as user parameter)
             user = kwargs.get('user') or kwargs.get('current_user')
             if not user:
@@ -147,7 +147,7 @@ def has_role(role_name: str):
                     detail=f"Role '{role_name}' required"
                 )
             
-            return await func(*args, **kwargs)
+            return func(*args, **kwargs)
         return wrapper
     return role_checker
 

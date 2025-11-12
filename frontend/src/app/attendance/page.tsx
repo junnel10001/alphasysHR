@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { ProtectedRoute } from '@/components/ProtectedRoute'
 import { LayoutWrapper } from '@/components/layout'
+import { attendanceService } from '@/lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -53,60 +54,19 @@ export default function AttendancePage() {
   const fetchAttendanceRecords = async () => {
     try {
       setIsLoading(true)
-      // Mock data for demonstration
-      const mockRecords: AttendanceRecord[] = [
-        {
-          id: 1,
-          employee_id: 1,
-          employee_name: 'John Admin',
-          date: '2025-01-25',
-          time_in: '08:30',
-          time_out: '17:30',
-          hours_worked: 8,
-          status: 'Present'
-        },
-        {
-          id: 2,
-          employee_id: 2,
-          employee_name: 'Jane Doe',
-          date: '2025-01-25',
-          time_in: '09:15',
-          time_out: '17:30',
-          hours_worked: 7.75,
-          status: 'Late'
-        },
-        {
-          id: 3,
-          employee_id: 3,
-          employee_name: 'Bob Smith',
-          date: '2025-01-25',
-          time_in: null,
-          time_out: null,
-          hours_worked: null,
-          status: 'Absent'
-        },
-        {
-          id: 4,
-          employee_id: 4,
-          employee_name: 'Alice Johnson',
-          date: '2025-01-25',
-          time_in: '08:45',
-          time_out: '12:00',
-          hours_worked: 3.25,
-          status: 'On Leave'
-        },
-        {
-          id: 5,
-          employee_id: 5,
-          employee_name: 'Mike Wilson',
-          date: '2025-01-24',
-          time_in: '08:00',
-          time_out: '17:00',
-          hours_worked: 8,
-          status: 'Present'
-        }
-      ]
-      setAttendanceRecords(mockRecords)
+      const response = await attendanceService.getAttendance()
+      // Transform the data to match the frontend interface
+      const records = (response.data || response).map((record: any) => ({
+        id: record.attendance_id,
+        employee_id: record.user_id,
+        employee_name: `${record.user?.first_name || ''} ${record.user?.last_name || ''}`,
+        date: record.date,
+        time_in: record.time_in,
+        time_out: record.time_out,
+        hours_worked: record.hours_worked,
+        status: record.status
+      }))
+      setAttendanceRecords(records)
     } catch (error) {
       console.error('Error fetching attendance records:', error)
     } finally {
